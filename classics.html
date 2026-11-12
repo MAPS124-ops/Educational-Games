@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classic Strategy Games — Chess, Checkers & Backgammon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            boardLight: '#f0d9b5',
+            boardDark: '#b58863',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .chess-piece {
+      transition: transform 0.15s ease;
+    }
+    .chess-piece:hover {
+      transform: scale(1.08);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-indigo-600 to-blue-500 text-white p-2.5 rounded-xl shadow-md">
+          <i class="fa-solid fa-chess-knight text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-xl tracking-tight text-slate-900 dark:text-white">Classic Strategy Hub</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold hidden sm:block">Chess, Checkers & Backgammon</p>
+        </div>
+      </div>
+
+      <!-- Game Selector Tabs -->
+      <nav class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+        <button id="tab-chess" onclick="switchGame('chess')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm transition">
+          <i class="fa-solid fa-chess mr-1.5"></i>Chess
+        </button>
+        <button id="tab-checkers" onclick="switchGame('checkers')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+          <i class="fa-solid fa-circle-dot mr-1.5"></i>Checkers
+        </button>
+        <button id="tab-backgammon" onclick="switchGame('backgammon')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+          <i class="fa-solid fa-dice mr-1.5"></i>Backgammon
+        </button>
+      </nav>
+
+      <!-- Utility Controls -->
+      <div class="flex items-center space-x-2">
+        <button id="sound-btn" onclick="toggleSound()" title="Toggle Sound Effects" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition">
+          <i id="sound-icon" class="fa-solid fa-volume-high text-indigo-500"></i>
+        </button>
+        <button onclick="toggleTheme()" title="Toggle Dark/Light Theme" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition">
+          <i class="fa-solid fa-moon dark:hidden"></i>
+          <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl w-full mx-auto px-4 py-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- Left / Center Board Area (8 cols) -->
+    <div class="lg:col-span-8 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+      
+      <!-- Top Status & Mode Bar -->
+      <div class="w-full flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-700">
+        <div class="flex items-center gap-3">
+          <span id="turn-badge" class="px-3.5 py-1.5 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 font-extrabold text-xs sm:text-sm flex items-center gap-2">
+            <span id="turn-dot" class="w-2.5 h-2.5 rounded-full bg-white border border-slate-400 inline-block"></span>
+            <span id="turn-text">White's Turn</span>
+          </span>
+          <span id="status-message" class="text-xs font-bold text-amber-600 dark:text-amber-400"></span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Opponent Mode Toggle -->
+          <div class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
+            <button id="mode-ai" onclick="setOpponentMode('ai')" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white shadow-sm transition">
+              <i class="fa-solid fa-robot mr-1"></i>vs AI
+            </button>
+            <button id="mode-pvp" onclick="setOpponentMode('pvp')" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 transition">
+              <i class="fa-solid fa-user-group mr-1"></i>2 Player
+            </button>
+          </div>
+
+          <button onclick="resetCurrentGame()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-rotate-right"></i> New Game
+          </button>
+        </div>
+      </div>
+
+      <!-- CHESS CONTAINER -->
+      <div id="view-chess" class="w-full flex flex-col items-center">
+        <div id="chess-board" class="grid grid-cols-8 w-full max-w-[520px] aspect-square border-4 border-slate-800 dark:border-slate-600 rounded-xl overflow-hidden shadow-lg">
+          <!-- 64 Squares injected via JS -->
+        </div>
+      </div>
+
+      <!-- CHECKERS CONTAINER -->
+      <div id="view-checkers" class="w-full flex-col items-center hidden">
+        <div id="checkers-board" class="grid grid-cols-8 w-full max-w-[520px] aspect-square border-4 border-slate-800 dark:border-slate-600 rounded-xl overflow-hidden shadow-lg">
+          <!-- 64 Squares injected via JS -->
+        </div>
+      </div>
+
+      <!-- BACKGAMMON CONTAINER -->
+      <div id="view-backgammon" class="w-full flex-col items-center hidden space-y-4">
+        <!-- Dice & Roll Controls -->
+        <div class="w-full max-w-[640px] flex flex-wrap items-center justify-between gap-3 bg-amber-50 dark:bg-slate-900 p-3.5 rounded-2xl border border-amber-200 dark:border-slate-700">
+          <div class="flex items-center gap-3">
+            <button id="bg-roll-btn" onclick="rollBackgammonDice()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center gap-2">
+              <i class="fa-solid fa-dice"></i> Roll Dice
+            </button>
+            <div id="bg-dice-display" class="flex items-center gap-2">
+              <span class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 flex items-center justify-center font-extrabold text-base shadow-sm">-</span>
+              <span class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 flex items-center justify-center font-extrabold text-base shadow-sm">-</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-bold">
+            <span class="text-slate-700 dark:text-slate-200">White Off: <strong id="bg-white-off" class="text-indigo-600">0</strong>/15</span>
+            <span class="text-slate-700 dark:text-slate-200">Red Off: <strong id="bg-red-off" class="text-rose-600">0</strong>/15</span>
+            <button onclick="bearOffSelected()" id="bg-bearoff-btn" class="hidden px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-extrabold shadow">
+              Bear Off Checker
+            </button>
+          </div>
+        </div>
+
+        <!-- Backgammon Board -->
+        <div class="w-full max-w-[640px] bg-amber-900 p-3 rounded-2xl border-4 border-amber-950 shadow-xl space-y-3">
+          <!-- Top Half (Points 13-18 | Bar | Points 19-24) -->
+          <div class="grid grid-cols-13 gap-1 bg-amber-100 dark:bg-slate-800 p-2 rounded-xl min-h-[175px]" id="bg-top-row"></div>
+          <!-- Center Bar Status -->
+          <div class="flex items-center justify-between px-4 py-1.5 bg-amber-950 text-amber-200 rounded-lg text-xs font-bold">
+            <span>White Bar (Captured): <strong id="bg-white-bar" class="text-white">0</strong></span>
+            <span class="text-[11px] uppercase tracking-wider text-amber-400">Select a point to move</span>
+            <span>Red Bar (Captured): <strong id="bg-red-bar" class="text-rose-400">0</strong></span>
+          </div>
+          <!-- Bottom Half (Points 12-7 | Bar | Points 6-1) -->
+          <div class="grid grid-cols-13 gap-1 bg-amber-100 dark:bg-slate-800 p-2 rounded-xl min-h-[175px]" id="bg-bottom-row"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar: Rules, Captures & Move History (4 cols) -->
+    <div class="lg:col-span-4 space-y-6">
+      
+      <!-- Rules & Quick Guide Card -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+        <h2 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-book-open text-indigo-500"></i> Strategy & Rules
+        </h2>
+        <p id="game-rules-text" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Click any of your pieces to highlight valid moves. Pawns promote automatically to Queens upon reaching the far rank. Capture the opponent's King or force checkmate to win!
+        </p>
+      </div>
+
+      <!-- Move History Log -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> Match Log
+          </h2>
+          <button onclick="clearMoveLog()" class="text-[11px] font-bold text-slate-400 hover:text-slate-600">Clear</button>
+        </div>
+        <div id="move-log" class="h-64 overflow-y-auto custom-scrollbar space-y-1.5 pr-1 text-xs font-medium">
+          <div class="text-slate-400 italic">Match started. Make your opening move!</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ==========================================
+    // SHARED STATE & AUDIO ENGINE
+    // ==========================================
+    let currentGame = 'chess';
+    let opponentMode = 'ai'; // 'ai' or 'pvp'
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function playTone(freq, type = 'sine', duration = 0.1) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      icon.className = soundEnabled ? 'fa-solid fa-volume-high text-indigo-500' : 'fa-solid fa-volume-xmark text-slate-400';
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function logEvent(msg) {
+      const log = document.getElementById('move-log');
+      const entry = document.createElement('div');
+      entry.className = 'p-2 rounded-lg bg-slate-50 dark:bg-slate-900/80 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300';
+      entry.textContent = msg;
+      log.prepend(entry);
+    }
+
+    function clearMoveLog() {
+      document.getElementById('move-log').innerHTML = '';
+    }
+
+    function setOpponentMode(mode) {
+      opponentMode = mode;
+      const aiBtn = document.getElementById('mode-ai');
+      const pvpBtn = document.getElementById('mode-pvp');
+      if (mode === 'ai') {
+        aiBtn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white shadow-sm transition';
+        pvpBtn.className = 'px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 transition';
+      } else {
+        pvpBtn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white shadow-sm transition';
+        aiBtn.className = 'px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 transition';
+      }
+      resetCurrentGame();
+    }
+
+    function switchGame(game) {
+      currentGame = game;
+      ['chess', 'checkers', 'backgammon'].forEach(g => {
+        const tab = document.getElementById(`tab-${g}`);
+        const view = document.getElementById(`view-${g}`);
+        if (g === game) {
+          tab.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm transition';
+          view.classList.remove('hidden');
+          view.classList.add('flex');
+        } else {
+          tab.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
+          view.classList.add('hidden');
+          view.classList.remove('flex');
+        }
+      });
+
+      const rulesText = document.getElementById('game-rules-text');
+      if (game === 'chess') {
+        rulesText.textContent = "Click any of your pieces to highlight valid moves. Pawns promote automatically to Queens on the 8th rank. Capture the enemy King to win!";
+        updateTurnUI(chessTurn === 'w' ? "White's Turn" : "Black's Turn", chessTurn === 'w' ? 'white' : 'black');
+      } else if (game === 'checkers') {
+        rulesText.textContent = "Move diagonally forward on dark squares. Jump over opponent pieces to capture them! Reach the far row to crown a King (which moves forward and backward).";
+        updateTurnUI(checkersTurn === 'r' ? "Red's Turn" : "Black's Turn", checkersTurn === 'r' ? 'red' : 'black');
+      } else {
+        rulesText.textContent = "Roll the dice and move your White checkers counter-clockwise toward your home board (Points 1–6). Once all 15 checkers are in your home board, bear them off to win!";
+        updateTurnUI(bgTurn === 'w' ? "White's Turn" : "Red's Turn", bgTurn === 'w' ? 'white' : 'red');
+      }
+    }
+
+    function updateTurnUI(text, color) {
+      document.getElementById('turn-text').textContent = text;
+      const dot = document.getElementById('turn-dot');
+      if (color === 'white') dot.className = 'w-2.5 h-2.5 rounded-full bg-white border border-slate-400 inline-block';
+      else if (color === 'red') dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 inline-block';
+      else dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-900 inline-block';
+    }
+
+    function resetCurrentGame() {
+      document.getElementById('status-message').textContent = '';
+      clearMoveLog();
+      if (currentGame === 'chess') initChess();
+      else if (currentGame === 'checkers') initCheckers();
+      else initBackgammon();
+      logEvent(`Started a new ${currentGame.toUpperCase()} match (${opponentMode === 'ai' ? 'vs AI' : '2 Player'}).`);
+    }
+
+    // ==========================================
+    // 1. CHESS ENGINE
+    // ==========================================
+    const CHESS_ICONS = {
+      wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
+      bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟'
+    };
+    let chessBoard = [];
+    let chessTurn = 'w';
+    let chessSelected = null;
+    let chessValidMoves = [];
+    let chessGameOver = false;
+
+    function initChess() {
+      chessBoard = [
+        ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+        ['bP','bP','bP','bP','bP','bP','bP','bP'],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        ['wP','wP','wP','wP','wP','wP','wP','wP'],
+        ['wR','wN','wB','wQ','wK','wB','wN','wR']
+      ];
+      chessTurn = 'w';
+      chessSelected = null;
+      chessValidMoves = [];
+      chessGameOver = false;
+      updateTurnUI("White's Turn", 'white');
+      renderChess();
+    }
+
+    function getChessMoves(board, r, c) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const color = piece[0];
+      const type = piece[1];
+      const moves = [];
+
+      const inBounds = (nr, nc) => nr >= 0 && nr < 8 && nc >= 0 && nc < 8;
+      const addSlide = (dr, dc) => {
+        let nr = r + dr, nc = c + dc;
+        while (inBounds(nr, nc)) {
+          if (!board[nr][nc]) {
+            moves.push({ r: nr, c: nc });
+          } else {
+            if (board[nr][nc][0] !== color) moves.push({ r: nr, c: nc });
+            break;
+          }
+          nr += dr;
+          nc += dc;
+        }
+      };
+
+      if (type === 'P') {
+        const dir = color === 'w' ? -1 : 1;
+        const startRow = color === 'w' ? 6 : 1;
+        if (inBounds(r + dir, c) && !board[r + dir][c]) {
+          moves.push({ r: r + dir, c });
+          if (r === startRow && !board[r + 2 * dir][c]) {
+            moves.push({ r: r + 2 * dir, c });
+          }
+        }
+        [-1, 1].forEach(dc => {
+          if (inBounds(r + dir, c + dc) && board[r + dir][c + dc] && board[r + dir][c + dc][0] !== color) {
+            moves.push({ r: r + dir, c: c + dc });
+          }
+        });
+      } else if (type === 'R') {
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => addSlide(dr, dc));
+      } else if (type === 'B') {
+        [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => addSlide(dr, dc));
+      } else if (type === 'Q') {
+        [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr, dc]) => addSlide(dr, dc));
+      } else if (type === 'N') {
+        [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr, dc]) => {
+          const nr = r + dr, nc = c + dc;
+          if (inBounds(nr, nc) && (!board[nr][nc] || board[nr][nc][0] !== color)) {
+            moves.push({ r: nr, c: nc });
+          }
+        });
+      } else if (type === 'K') {
+        [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr, dc]) => {
+          const nr = r + dr, nc = c + dc;
+          if (inBounds(nr, nc) && (!board[nr][nc] || board[nr][nc][0] !== color)) {
+            moves.push({ r: nr, c: nc });
+          }
+        });
+      }
+      return moves;
+    }
+
+    function handleChessClick(r, c) {
+      if (chessGameOver) return;
+      if (opponentMode === 'ai' && chessTurn === 'b') return;
+
+      const clickedPiece = chessBoard[r][c];
+      const isMove = chessValidMoves.find(m => m.r === r && m.c === c);
+
+      if (isMove && chessSelected) {
+        executeChessMove(chessSelected.r, chessSelected.c, r, c);
+        return;
+      }
+
+      if (clickedPiece && clickedPiece[0] === chessTurn) {
+        chessSelected = { r, c };
+        chessValidMoves = getChessMoves(chessBoard, r, c);
+        playTone(320, 'sine', 0.05);
+      } else {
+        chessSelected = null;
+        chessValidMoves = [];
+      }
+      renderChess();
+    }
+
+    function executeChessMove(fr, fc, tr, tc) {
+      const piece = chessBoard[fr][fc];
+      const captured = chessBoard[tr][tc];
+      chessBoard[tr][tc] = piece;
+      chessBoard[fr][fc] = null;
+
+      // Pawn Promotion
+      if (piece === 'wP' && tr === 0) chessBoard[tr][tc] = 'wQ';
+      if (piece === 'bP' && tr === 7) chessBoard[tr][tc] = 'bQ';
+
+      const cols = 'abcdefgh';
+      const moveNotation = `${piece[0] === 'w' ? 'White' : 'Black'} ${piece[1]} → ${cols[tc]}${8 - tr}${captured ? ' (Captured ' + captured[1] + ')' : ''}`;
+      logEvent(moveNotation);
+      playTone(captured ? 520 : 400, 'triangle', 0.12);
+
+      chessSelected = null;
+      chessValidMoves = [];
+
+      if (captured && captured[1] === 'K') {
+        chessGameOver = true;
+        document.getElementById('status-message').textContent = `${piece[0] === 'w' ? 'White' : 'Black'} Wins by King Capture!`;
+        renderChess();
+        return;
+      }
+
+      chessTurn = chessTurn === 'w' ? 'b' : 'w';
+      updateTurnUI(chessTurn === 'w' ? "White's Turn" : "Black's Turn", chessTurn === 'w' ? 'white' : 'black');
+      renderChess();
+
+      if (opponentMode === 'ai' && chessTurn === 'b' && !chessGameOver) {
+        setTimeout(makeChessAIMove, 450);
+      }
+    }
+
+    function makeChessAIMove() {
+      const allMoves = [];
+      const values = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 100 };
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (chessBoard[r][c] && chessBoard[r][c][0] === 'b') {
+            const moves = getChessMoves(chessBoard, r, c);
+            moves.forEach(m => {
+              const target = chessBoard[m.r][m.c];
+              const score = target ? values[target[1]] * 10 : Math.random();
+              allMoves.push({ fr: r, fc: c, tr: m.r, tc: m.c, score });
+            });
+          }
+        }
+      }
+      if (allMoves.length === 0) return;
+      allMoves.sort((a, b) => b.score - a.score);
+      const best = allMoves[0];
+      executeChessMove(best.fr, best.fc, best.tr, best.tc);
+    }
+
+    function renderChess() {
+      const boardEl = document.getElementById('chess-board');
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const isDark = (r + c) % 2 === 1;
+          const isSelected = chessSelected && chessSelected.r === r && chessSelected.c === c;
+          const isValid = chessValidMoves.some(m => m.r === r && m.c === c);
+          const piece = chessBoard[r][c];
+
+          const sq = document.createElement('div');
+          sq.onclick = () => handleChessClick(r, c);
+          sq.className = `relative flex items-center justify-center cursor-pointer text-3xl sm:text-5xl select-none ${
+            isDark ? 'bg-[#b58863]' : 'bg-[#f0d9b5]'
+          } ${isSelected ? 'ring-4 ring-inset ring-indigo-500' : ''}`;
+
+          if (piece) {
+            const span = document.createElement('span');
+            span.className = `chess-piece ${piece[0] === 'w' ? 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]' : 'text-slate-900'}`;
+            span.textContent = CHESS_ICONS[piece];
+            sq.appendChild(span);
+          }
+
+          if (isValid) {
+            const dot = document.createElement('div');
+            dot.className = piece
+              ? 'absolute inset-1 border-4 border-rose-500/80 rounded-full pointer-events-none'
+              : 'w-3.5 h-3.5 rounded-full bg-indigo-600/60 pointer-events-none';
+            sq.appendChild(dot);
+          }
+
+          boardEl.appendChild(sq);
+        }
+      }
+    }
+
+    // ==========================================
+    // 2. CHECKERS ENGINE
+    // ==========================================
+    let checkersBoard = [];
+    let checkersTurn = 'r'; // 'r' (Red, bottom) or 'b' (Black, top)
+    let checkersSelected = null;
+    let checkersValidMoves = [];
+    let checkersGameOver = false;
+
+    function initCheckers() {
+      checkersBoard = Array.from({ length: 8 }, () => Array(8).fill(null));
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if ((r + c) % 2 === 1) {
+            if (r < 3) checkersBoard[r][c] = { color: 'b', king: false };
+            else if (r > 4) checkersBoard[r][c] = { color: 'r', king: false };
+          }
+        }
+      }
+      checkersTurn = 'r';
+      checkersSelected = null;
+      checkersValidMoves = [];
+      checkersGameOver = false;
+      updateTurnUI("Red's Turn", 'red');
+      renderCheckers();
+    }
+
+    function getCheckersMoves(board, r, c) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const moves = [];
+      const dirs = piece.king
+        ? [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+        : piece.color === 'r'
+        ? [[-1, -1], [-1, 1]]
+        : [[1, -1], [1, 1]];
+
+      dirs.forEach(([dr, dc]) => {
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+          if (!board[nr][nc]) {
+            moves.push({ r: nr, c: nc, jump: null });
+          } else if (board[nr][nc].color !== piece.color) {
+            const jr = nr + dr, jc = nc + dc;
+            if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && !board[jr][jc]) {
+              moves.push({ r: jr, c: jc, jump: { r: nr, c: nc } });
+            }
+          }
+        }
+      });
+      return moves;
+    }
+
+    function handleCheckersClick(r, c) {
+      if (checkersGameOver) return;
+      if (opponentMode === 'ai' && checkersTurn === 'b') return;
+
+      const move = checkersValidMoves.find(m => m.r === r && m.c === c);
+      if (move && checkersSelected) {
+        executeCheckersMove(checkersSelected.r, checkersSelected.c, move);
+        return;
+      }
+
+      const piece = checkersBoard[r][c];
+      if (piece && piece.color === checkersTurn) {
+        checkersSelected = { r, c };
+        checkersValidMoves = getCheckersMoves(checkersBoard, r, c);
+        playTone(340, 'sine', 0.05);
+      } else {
+        checkersSelected = null;
+        checkersValidMoves = [];
+      }
+      renderCheckers();
+    }
+
+    function executeCheckersMove(fr, fc, move) {
+      const piece = checkersBoard[fr][fc];
+      checkersBoard[move.r][move.c] = piece;
+      checkersBoard[fr][fc] = null;
+
+      if (move.jump) {
+        checkersBoard[move.jump.r][move.jump.c] = null;
+        playTone(580, 'triangle', 0.14);
+        logEvent(`${piece.color === 'r' ? 'Red' : 'Black'} jumped and captured a piece!`);
+      } else {
+        playTone(410, 'sine', 0.09);
+        logEvent(`${piece.color === 'r' ? 'Red' : 'Black'} moved to (${move.r + 1}, ${move.c + 1})`);
+      }
+
+      if (piece.color === 'r' && move.r === 0) piece.king = true;
+      if (piece.color === 'b' && move.r === 7) piece.king = true;
+
+      checkersSelected = null;
+      checkersValidMoves = [];
+
+      // Check win
+      let rCount = 0, bCount = 0;
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (checkersBoard[r][c]?.color === 'r') rCount++;
+          if (checkersBoard[r][c]?.color === 'b') bCount++;
+        }
+      }
+      if (rCount === 0 || bCount === 0) {
+        checkersGameOver = true;
+        document.getElementById('status-message').textContent = `${rCount > 0 ? 'Red' : 'Black'} Wins!`;
+        renderCheckers();
+        return;
+      }
+
+      checkersTurn = checkersTurn === 'r' ? 'b' : 'r';
+      updateTurnUI(checkersTurn === 'r' ? "Red's Turn" : "Black's Turn", checkersTurn === 'r' ? 'red' : 'black');
+      renderCheckers();
+
+      if (opponentMode === 'ai' && checkersTurn === 'b' && !checkersGameOver) {
+        setTimeout(makeCheckersAIMove, 450);
+      }
+    }
+
+    function makeCheckersAIMove() {
+      const allMoves = [];
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (checkersBoard[r][c]?.color === 'b') {
+            getCheckersMoves(checkersBoard, r, c).forEach(m => {
+              allMoves.push({ fr: r, fc: c, move: m, score: m.jump ? 10 : Math.random() });
+            });
+          }
+        }
+      }
+      if (allMoves.length === 0) {
+        checkersGameOver = true;
+        document.getElementById('status-message').textContent = 'Red Wins (Black has no moves)!';
+        return;
+      }
+      allMoves.sort((a, b) => b.score - a.score);
+      const chosen = allMoves[0];
+      executeCheckersMove(chosen.fr, chosen.fc, chosen.move);
+    }
+
+    function renderCheckers() {
+      const boardEl = document.getElementById('checkers-board');
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const isDark = (r + c) % 2 === 1;
+          const isSelected = checkersSelected && checkersSelected.r === r && checkersSelected.c === c;
+          const isValid = checkersValidMoves.some(m => m.r === r && m.c === c);
+          const piece = checkersBoard[r][c];
+
+          const sq = document.createElement('div');
+          sq.onclick = () => handleCheckersClick(r, c);
+          sq.className = `relative flex items-center justify-center cursor-pointer ${
+            isDark ? 'bg-slate-700' : 'bg-slate-200'
+          } ${isSelected ? 'ring-4 ring-inset ring-amber-400' : ''}`;
+
+          if (piece) {
+            const disc = document.createElement('div');
+            disc.className = `w-4/5 h-4/5 rounded-full shadow-md flex items-center justify-center border-2 transition-transform hover:scale-105 ${
+              piece.color === 'r'
+                ? 'bg-rose-600 border-rose-300 text-amber-200'
+                : 'bg-slate-950 border-slate-500 text-amber-300'
+            }`;
+            if (piece.king) {
+              disc.innerHTML = '<i class="fa-solid fa-crown text-xs sm:text-base"></i>';
+            }
+            sq.appendChild(disc);
+          }
+
+          if (isValid) {
+            const dot = document.createElement('div');
+            dot.className = 'w-4 h-4 rounded-full bg-emerald-400/80 animate-pulse';
+            sq.appendChild(dot);
+          }
+
+          boardEl.appendChild(sq);
+        }
+      }
+    }
+
+    // ==========================================
+    // 3. BACKGAMMON ENGINE
+    // ==========================================
+    // Points 0..23: positive = White ('w'), negative = Red ('r')
+    // White moves 23 -> 0 (Home: 0..5). Red moves 0 -> 23 (Home: 18..23).
+    let bgPoints = [];
+    let bgTurn = 'w';
+    let bgDice = [];
+    let bgSelectedPoint = null;
+    let bgBar = { w: 0, r: 0 };
+    let bgOff = { w: 0, r: 0 };
+    let bgGameOver = false;
+
+    function initBackgammon() {
+      bgPoints = Array(24).fill(0);
+      // Standard starting layout
+      bgPoints[23] = 2;   // White 2 on 24-pt
+      bgPoints[12] = 5;   // White 5 on 13-pt
+      bgPoints[7] = 3;    // White 3 on 8-pt
+      bgPoints[5] = 5;    // White 5 on 6-pt
+
+      bgPoints[0] = -2;   // Red 2 on 1-pt
+      bgPoints[11] = -5;  // Red 5 on 12-pt
+      bgPoints[16] = -3;  // Red 3 on 17-pt
+      bgPoints[18] = -5;  // Red 5 on 19-pt
+
+      bgTurn = 'w';
+      bgDice = [];
+      bgSelectedPoint = null;
+      bgBar = { w: 0, r: 0 };
+      bgOff = { w: 0, r: 0 };
+      bgGameOver = false;
+      updateTurnUI("White's Turn (Roll Dice)", 'white');
+      renderBackgammon();
+    }
+
+    function rollBackgammonDice() {
+      if (bgGameOver || bgDice.length > 0) return;
+      if (opponentMode === 'ai' && bgTurn === 'r') return;
+
+      const d1 = Math.floor(Math.random() * 6) + 1;
+      const d2 = Math.floor(Math.random() * 6) + 1;
+      bgDice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
+      playTone(480, 'square', 0.12);
+      logEvent(`${bgTurn === 'w' ? 'White' : 'Red'} rolled ${d1} and ${d2}.`);
+      renderBackgammon();
+
+      if (!hasAnyValidBgMove(bgTurn)) {
+        logEvent(`No valid moves for ${bgTurn === 'w' ? 'White' : 'Red'}. Turn passed.`);
+        bgDice = [];
+        endBackgammonTurn();
+      }
+    }
+
+    function canBearOff(player) {
+      if (bgBar[player] > 0) return false;
+      if (player === 'w') {
+        for (let i = 6; i < 24; i++) if (bgPoints[i] > 0) return false;
+        return true;
+      } else {
+        for (let i = 0; i < 18; i++) if (bgPoints[i] < 0) return false;
+        return true;
+      }
+    }
+
+    function getBgTargets(fromIdx, player) {
+      if (bgDice.length === 0) return [];
+      const targets = [];
+      const uniqueDice = [...new Set(bgDice)];
+
+      uniqueDice.forEach(die => {
+        if (fromIdx === 'bar') {
+          const toIdx = player === 'w' ? 24 - die : die - 1;
+          if (isPointOpen(toIdx, player)) targets.push({ to: toIdx, die });
+        } else {
+          const toIdx = player === 'w' ? fromIdx - die : fromIdx + die;
+          if (toIdx >= 0 && toIdx < 24) {
+            if (isPointOpen(toIdx, player)) targets.push({ to: toIdx, die });
+          } else if (canBearOff(player)) {
+            targets.push({ to: 'off', die });
+          }
+        }
+      });
+      return targets;
+    }
+
+    function isPointOpen(idx, player) {
+      if (idx < 0 || idx >= 24) return false;
+      const val = bgPoints[idx];
+      return player === 'w' ? val >= -1 : val <= 1;
+    }
+
+    function hasAnyValidBgMove(player) {
+      if (bgBar[player] > 0) return getBgTargets('bar', player).length > 0;
+      for (let i = 0; i < 24; i++) {
+        if ((player === 'w' && bgPoints[i] > 0) || (player === 'r' && bgPoints[i] < 0)) {
+          if (getBgTargets(i, player).length > 0) return true;
+        }
+      }
+      return false;
+    }
+
+    function handleBgPointClick(idx) {
+      if (bgGameOver || bgDice.length === 0) return;
+      if (opponentMode === 'ai' && bgTurn === 'r') return;
+
+      // Must enter from bar first
+      if (bgBar[bgTurn] > 0) {
+        const targets = getBgTargets('bar', bgTurn);
+        const match = targets.find(t => t.to === idx);
+        if (match) executeBgMove('bar', idx, match.die);
+        return;
+      }
+
+      // Check if clicking valid destination
+      if (bgSelectedPoint !== null) {
+        const targets = getBgTargets(bgSelectedPoint, bgTurn);
+        const match = targets.find(t => t.to === idx);
+        if (match) {
+          executeBgMove(bgSelectedPoint, idx, match.die);
+          return;
+        }
+      }
+
+      // Otherwise select own checker
+      const val = bgPoints[idx];
+      if ((bgTurn === 'w' && val > 0) || (bgTurn === 'r' && val < 0)) {
+        bgSelectedPoint = idx;
+        playTone(320, 'sine', 0.05);
+      } else {
+        bgSelectedPoint = null;
+      }
+      renderBackgammon();
+    }
+
+    function bearOffSelected() {
+      if (bgSelectedPoint === null) return;
+      const targets = getBgTargets(bgSelectedPoint, bgTurn);
+      const offTarget = targets.find(t => t.to === 'off');
+      if (offTarget) {
+        executeBgMove(bgSelectedPoint, 'off', offTarget.die);
+      }
+    }
+
+    function executeBgMove(from, to, dieUsed) {
+      // Remove from source
+      if (from === 'bar') bgBar[bgTurn]--;
+      else bgPoints[from] += bgTurn === 'w' ? -1 : 1;
+
+      // Place at target
+      if (to === 'off') {
+        bgOff[bgTurn]++;
+        playTone(620, 'triangle', 0.14);
+        logEvent(`${bgTurn === 'w' ? 'White' : 'Red'} bore off a checker!`);
+      } else {
+        // Check hit
+        if (bgTurn === 'w' && bgPoints[to] === -1) {
+          bgPoints[to] = 0;
+          bgBar.r++;
+          logEvent('White hit a Red blot to the bar!');
+        } else if (bgTurn === 'r' && bgPoints[to] === 1) {
+          bgPoints[to] = 0;
+          bgBar.w++;
+          logEvent('Red hit a White blot to the bar!');
+        }
+        bgPoints[to] += bgTurn === 'w' ? 1 : -1;
+        playTone(430, 'sine', 0.09);
+      }
+
+      // Consume die
+      const dieIdx = bgDice.indexOf(dieUsed);
+      if (dieIdx > -1) bgDice.splice(dieIdx, 1);
+      bgSelectedPoint = null;
+
+      if (bgOff[bgTurn] >= 15) {
+        bgGameOver = true;
+        document.getElementById('status-message').textContent = `${bgTurn === 'w' ? 'White' : 'Red'} Wins Backgammon!`;
+        renderBackgammon();
+        return;
+      }
+
+      if (bgDice.length === 0 || !hasAnyValidBgMove(bgTurn)) {
+        bgDice = [];
+        endBackgammonTurn();
+      } else {
+        renderBackgammon();
+      }
+    }
+
+    function endBackgammonTurn() {
+      bgTurn = bgTurn === 'w' ? 'r' : 'w';
+      updateTurnUI(bgTurn === 'w' ? "White's Turn (Roll Dice)" : "Red's Turn", bgTurn === 'w' ? 'white' : 'red');
+      renderBackgammon();
+
+      if (opponentMode === 'ai' && bgTurn === 'r' && !bgGameOver) {
+        setTimeout(runBackgammonAI, 600);
+      }
+    }
+
+    function runBackgammonAI() {
+      const d1 = Math.floor(Math.random() * 6) + 1;
+      const d2 = Math.floor(Math.random() * 6) + 1;
+      bgDice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2];
+      logEvent(`AI (Red) rolled ${d1} and ${d2}.`);
+
+      while (bgDice.length > 0 && !bgGameOver) {
+        if (bgBar.r > 0) {
+          const targets = getBgTargets('bar', 'r');
+          if (targets.length === 0) break;
+          executeBgMove('bar', targets[0].to, targets[0].die);
+        } else {
+          let moved = false;
+          for (let i = 0; i < 24; i++) {
+            if (bgPoints[i] < 0) {
+              const targets = getBgTargets(i, 'r');
+              if (targets.length > 0) {
+                executeBgMove(i, targets[0].to, targets[0].die);
+                moved = true;
+                break;
+              }
+            }
+          }
+          if (!moved) break;
+        }
+      }
+      bgDice = [];
+      if (!bgGameOver) {
+        bgTurn = 'w';
+        updateTurnUI("White's Turn (Roll Dice)", 'white');
+        renderBackgammon();
+      }
+    }
+
+    function renderBackgammon() {
+      // Update Dice & Counters
+      const diceBox = document.getElementById('bg-dice-display');
+      if (bgDice.length === 0) {
+        diceBox.innerHTML = `
+          <span class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 flex items-center justify-center font-extrabold text-base shadow-sm">-</span>
+          <span class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 flex items-center justify-center font-extrabold text-base shadow-sm">-</span>
+        `;
+      } else {
+        diceBox.innerHTML = bgDice.map(d => `
+          <span class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-extrabold text-base shadow-sm">${d}</span>
+        `).join('');
+      }
+
+      document.getElementById('bg-white-bar').textContent = bgBar.w;
+      document.getElementById('bg-red-bar').textContent = bgBar.r;
+      document.getElementById('bg-white-off').textContent = bgOff.w;
+      document.getElementById('bg-red-off').textContent = bgOff.r;
+
+      const bearBtn = document.getElementById('bg-bearoff-btn');
+      if (bgSelectedPoint !== null && getBgTargets(bgSelectedPoint, bgTurn).some(t => t.to === 'off')) {
+        bearBtn.classList.remove('hidden');
+      } else {
+        bearBtn.classList.add('hidden');
+      }
+
+      const activeTargets = bgBar[bgTurn] > 0
+        ? getBgTargets('bar', bgTurn).map(t => t.to)
+        : bgSelectedPoint !== null
+        ? getBgTargets(bgSelectedPoint, bgTurn).map(t => t.to)
+        : [];
+
+      const renderPoint = (idx, isTop) => {
+        const val = bgPoints[idx];
+        const count = Math.abs(val);
+        const isWhite = val > 0;
+        const isTarget = activeTargets.includes(idx);
+        const isSelected = bgSelectedPoint === idx;
+
+        const col = document.createElement('div');
+        col.onclick = () => handleBgPointClick(idx);
+        col.className = `relative flex flex-col ${isTop ? 'justify-start' : 'justify-end'} items-center rounded cursor-pointer py-1 px-0.5 border transition ${
+          idx % 2 === 0 ? 'bg-amber-200/70 dark:bg-slate-700/70' : 'bg-amber-700/25 dark:bg-slate-900/60'
+        } ${isTarget ? 'ring-2 ring-emerald-500 bg-emerald-100/60' : 'border-transparent'} ${
+          isSelected ? 'ring-2 ring-indigo-500' : ''
+        }`;
+
+        const label = document.createElement('span');
+        label.className = 'text-[9px] font-bold text-slate-400';
+        label.textContent = idx + 1;
+        if (isTop) col.appendChild(label);
+
+        const stack = document.createElement('div');
+        stack.className = 'flex flex-col items-center -space-y-1.5 my-1';
+        const showCount = Math.min(count, 5);
+        for (let k = 0; k < showCount; k++) {
+          const disc = document.createElement('div');
+          disc.className = `w-6 h-6 sm:w-7 sm:h-7 rounded-full border shadow-sm flex items-center justify-center text-[10px] font-extrabold ${
+            isWhite
+              ? 'bg-white border-slate-400 text-slate-900'
+              : 'bg-rose-600 border-rose-300 text-white'
+          }`;
+          if (k === showCount - 1 && count > 5) disc.textContent = count;
+          stack.appendChild(disc);
+        }
+        col.appendChild(stack);
+        if (!isTop) col.appendChild(label);
+        return col;
+      };
+
+      const topRow = document.getElementById('bg-top-row');
+      topRow.innerHTML = '';
+      // Points 12..17 (indices 12..17) | Bar | Points 18..23
+      for (let i = 12; i <= 17; i++) topRow.appendChild(renderPoint(i, true));
+      const barTop = document.createElement('div');
+      barTop.className = 'bg-amber-950 rounded';
+      topRow.appendChild(barTop);
+      for (let i = 18; i <= 23; i++) topRow.appendChild(renderPoint(i, true));
+
+      const bottomRow = document.getElementById('bg-bottom-row');
+      bottomRow.innerHTML = '';
+      // Points 11..6 | Bar | Points 5..0
+      for (let i = 11; i >= 6; i--) bottomRow.appendChild(renderPoint(i, false));
+      const barBot = document.createElement('div');
+      barBot.className = 'bg-amber-950 rounded';
+      bottomRow.appendChild(barBot);
+      for (let i = 5; i >= 0; i--) bottomRow.appendChild(renderPoint(i, false));
+    }
+
+    // ==========================================
+    // INITIALIZE ALL GAMES ON LOAD
+    // ==========================================
+    window.onload = () => {
+      initChess();
+      initCheckers();
+      initBackgammon();
+      switchGame('chess');
+    };
+  </script>
+</body>
+</html>

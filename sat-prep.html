@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAT Prep Arcade — Wordle, Crossword & STEM Alchemy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-violet-600 to-indigo-500 text-white p-2.5 rounded-xl shadow-md">
+          <i class="fa-solid fa-graduation-cap text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-xl tracking-tight">SAT Prep Arcade</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold hidden sm:block">Vocabulary & STEM Synthesis</p>
+        </div>
+      </div>
+
+      <!-- Game Navigation -->
+      <nav class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+        <button id="tab-wordle" onclick="switchPrepGame('wordle')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-sm transition">
+          SAT Wordle
+        </button>
+        <button id="tab-crossword" onclick="switchPrepGame('crossword')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition">
+          Crossword
+        </button>
+        <button id="tab-alchemy" onclick="switchPrepGame('alchemy')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition">
+          STEM Alchemy
+        </button>
+      </nav>
+
+      <button onclick="document.documentElement.classList.toggle('dark')" title="Toggle Theme" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+        <i class="fa-solid fa-moon dark:hidden"></i>
+        <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-grow">
+
+    <!-- 1. SAT WORDLE -->
+    <section id="view-wordle" class="flex flex-col items-center space-y-5">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 w-full max-w-lg flex flex-col items-center space-y-4">
+        <div class="w-full flex items-center justify-between">
+          <div>
+            <h2 class="font-extrabold text-lg">SAT 5-Letter Vocab Challenge</h2>
+            <p class="text-xs text-slate-400">Guess the academic word in 6 tries</p>
+          </div>
+          <button onclick="initWordle()" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-extrabold rounded-xl shadow transition">
+            New Word
+          </button>
+        </div>
+
+        <!-- Hint Banner -->
+        <div id="wordle-hint-box" class="w-full p-3 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 text-xs text-violet-900 dark:text-violet-200">
+          <strong>Clue:</strong> <span id="wordle-clue-text">Loading clue...</span>
+        </div>
+
+        <!-- 6x5 Tile Grid -->
+        <div id="wordle-grid" class="grid grid-rows-6 gap-1.5"></div>
+
+        <!-- Status Message -->
+        <div id="wordle-message" class="min-h-[24px] text-xs font-extrabold text-center text-emerald-600 dark:text-emerald-400"></div>
+
+        <!-- On-Screen Keyboard -->
+        <div id="wordle-keyboard" class="w-full space-y-1.5 pt-2"></div>
+      </div>
+    </section>
+
+    <!-- 2. SAT CROSSWORD -->
+    <section id="view-crossword" class="hidden grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div class="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center space-y-4">
+        <div class="w-full flex items-center justify-between">
+          <div>
+            <h2 class="font-extrabold text-lg">SAT Vocabulary Crossword</h2>
+            <p class="text-xs text-slate-400">Type letters into the active squares</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="checkCrossword()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow">Check</button>
+            <button onclick="revealCrossword()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-extrabold rounded-xl">Reveal</button>
+          </div>
+        </div>
+
+        <div id="crossword-grid" class="grid grid-cols-7 gap-1 bg-slate-900 p-2 rounded-2xl border-4 border-slate-800"></div>
+        <div id="crossword-status" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400"></div>
+      </div>
+
+      <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <h3 class="font-extrabold text-sm uppercase tracking-wider text-violet-600">Crossword Clues</h3>
+        <div class="space-y-3 text-xs">
+          <div>
+            <h4 class="font-extrabold text-slate-700 dark:text-slate-200 mb-1">ACROSS</h4>
+            <ul class="space-y-1.5 text-slate-600 dark:text-slate-300">
+              <li><strong>1.</strong> Sharp, clear, and effective in expression (6 letters)</li>
+              <li><strong>4.</strong> Overly theatrical or melodramatic in behavior (5 letters — short form: DRAMA)</li>
+              <li><strong>5.</strong> Calm, peaceful, and untroubled (6 letters)</li>
+            </ul>
+          </div>
+          <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+            <h4 class="font-extrabold text-slate-700 dark:text-slate-200 mb-1">DOWN</h4>
+            <ul class="space-y-1.5 text-slate-600 dark:text-slate-300">
+              <li><strong>1.</strong> Clear and easily understood; rational (5 letters)</li>
+              <li><strong>2.</strong> Open to more than one interpretation (5 letters — VAGUE)</li>
+              <li><strong>3.</strong> Brief and clearly expressed (5 letters)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. STEM LITTLE ALCHEMY -->
+    <section id="view-alchemy" class="hidden grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Workbench -->
+      <div class="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="font-extrabold text-lg">STEM Element Alchemist</h2>
+            <p class="text-xs text-slate-400">Click two elements to synthesize scientific discoveries</p>
+          </div>
+          <span class="px-3 py-1 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-extrabold text-xs">
+            Discovered: <span id="alchemy-count">4</span> / <span id="alchemy-total">18</span>
+          </span>
+        </div>
+
+        <!-- Synthesis Slots -->
+        <div class="p-6 rounded-2xl bg-gradient-to-br from-slate-100 to-violet-50 dark:from-slate-900 dark:to-slate-800 border-2 border-dashed border-violet-300 dark:border-slate-600 flex flex-col items-center space-y-4">
+          <div class="flex items-center gap-4">
+            <div id="slot-1" onclick="clearSlot(1)" class="w-28 h-28 rounded-2xl bg-white dark:bg-slate-800 border-2 border-violet-400 flex flex-col items-center justify-center cursor-pointer shadow-sm p-2 text-center">
+              <span class="text-xs text-slate-400 font-bold">Slot 1</span>
+            </div>
+            <i class="fa-solid fa-plus text-violet-500 text-xl"></i>
+            <div id="slot-2" onclick="clearSlot(2)" class="w-28 h-28 rounded-2xl bg-white dark:bg-slate-800 border-2 border-violet-400 flex flex-col items-center justify-center cursor-pointer shadow-sm p-2 text-center">
+              <span class="text-xs text-slate-400 font-bold">Slot 2</span>
+            </div>
+          </div>
+
+          <div id="alchemy-result-banner" class="text-xs font-extrabold text-center text-violet-700 dark:text-violet-300 min-h-[36px] px-4">
+            Select two elements from your inventory to combine them!
+          </div>
+        </div>
+      </div>
+
+      <!-- Discovered Elements Inventory -->
+      <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Discovered Elements</h3>
+        <div id="alchemy-inventory" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto custom-scrollbar pr-1"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ==========================================
+    // NAVIGATION
+    // ==========================================
+    function switchPrepGame(game) {
+      ['wordle', 'crossword', 'alchemy'].forEach(g => {
+        const tab = document.getElementById(`tab-${g}`);
+        const view = document.getElementById(`view-${g}`);
+        if (g === game) {
+          tab.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-sm transition';
+          view.classList.remove('hidden');
+          view.classList.add(g === 'wordle' ? 'flex' : 'grid');
+        } else {
+          tab.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition';
+          view.classList.add('hidden');
+          view.classList.remove('flex', 'grid');
+        }
+      });
+    }
+
+    // ==========================================
+    // 1. SAT WORDLE
+    // ==========================================
+    const SAT_WORDS = [
+      { word: 'LUCID', clue: 'Expressed clearly; easy to understand and rational.' },
+      { word: 'TERSE', clue: 'Sparing in the use of words; abrupt and concise.' },
+      { word: 'ASTUTE', clue: 'Having or showing an ability to accurately assess situations.' }, // 6 letters filtered below
+      { word: 'CANDOR', clue: 'The quality of being open and honest in expression.' },
+      { word: 'ABATE', clue: 'To become less intense or widespread.' },
+      { word: 'APTLY', clue: 'In a manner that is appropriate or suitable in the circumstances.' },
+      { word: 'DOGMAS', clue: 'Principles laid down by an authority as incontrovertibly true.' },
+      { word: 'ENIGMA', clue: 'A person or thing that is mysterious or difficult to understand.' },
+      { word: 'GUILE', clue: 'Sly or cunning intelligence.' },
+      { word: 'INERT', clue: 'Lacking the ability or strength to move; chemically inactive.' },
+      { word: 'MIRTH', clue: 'Amusement, especially as expressed in laughter.' },
+      { word: 'NOVEL', clue: 'Interestingly new or unusual.' },
+      { word: 'PIOUS', clue: 'Devoutly religious or reverent.' },
+      { word: 'STOIC', clue: 'Enduring pain and hardship without showing feelings or complaining.' },
+      { word: 'VEXED', clue: 'Annoyed, frustrated, or worried.' }
+    ].filter(item => item.word.length === 5);
+
+    let targetWordObj = SAT_WORDS[0];
+    let wordleGuesses = [];
+    let currentGuess = '';
+    let wordleOver = false;
+
+    function initWordle() {
+      targetWordObj = SAT_WORDS[Math.floor(Math.random() * SAT_WORDS.length)];
+      wordleGuesses = [];
+      currentGuess = '';
+      wordleOver = false;
+      document.getElementById('wordle-clue-text').textContent = targetWordObj.clue;
+      document.getElementById('wordle-message').textContent = '';
+      renderWordle();
+    }
+
+    function handleWordleKey(key) {
+      if (wordleOver) return;
+      if (key === 'ENTER') {
+        if (currentGuess.length !== 5) return;
+        wordleGuesses.push(currentGuess);
+        if (currentGuess === targetWordObj.word) {
+          wordleOver = true;
+          document.getElementById('wordle-message').textContent = `Brilliant! "${targetWordObj.word}" — ${targetWordObj.clue}`;
+        } else if (wordleGuesses.length >= 6) {
+          wordleOver = true;
+          document.getElementById('wordle-message').textContent = `Out of tries! The SAT word was ${targetWordObj.word}.`;
+        }
+        currentGuess = '';
+      } else if (key === 'BACK') {
+        currentGuess = currentGuess.slice(0, -1);
+      } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+        currentGuess += key;
+      }
+      renderWordle();
+    }
+
+    function renderWordle() {
+      const grid = document.getElementById('wordle-grid');
+      grid.innerHTML = '';
+      const target = targetWordObj.word;
+
+      for (let r = 0; r < 6; r++) {
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-5 gap-1.5';
+        const guess = wordleGuesses[r] || (r === wordleGuesses.length ? currentGuess : '');
+        const isSubmitted = r < wordleGuesses.length;
+
+        for (let c = 0; c < 5; c++) {
+          const letter = guess[c] || '';
+          const cell = document.createElement('div');
+          let style = 'bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white';
+          if (isSubmitted) {
+            if (letter === target[c]) style = 'bg-emerald-600 border-emerald-600 text-white';
+            else if (target.includes(letter)) style = 'bg-amber-500 border-amber-500 text-white';
+            else style = 'bg-slate-500 border-slate-500 text-white';
+          }
+          cell.className = `w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center font-extrabold text-xl ${style}`;
+          cell.textContent = letter;
+          row.appendChild(cell);
+        }
+        grid.appendChild(row);
+      }
+
+      const kb = document.getElementById('wordle-keyboard');
+      kb.innerHTML = '';
+      const rows = [
+        ['Q','W','E','R','T','Y','U','I','O','P'],
+        ['A','S','D','F','G','H','J','K','L'],
+        ['ENTER','Z','X','C','V','B','N','M','BACK']
+      ];
+      rows.forEach(r => {
+        const line = document.createElement('div');
+        line.className = 'flex justify-center gap-1';
+        r.forEach(k => {
+          const btn = document.createElement('button');
+          btn.onclick = () => handleWordleKey(k);
+          btn.className = `px-2 sm:px-3 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-violet-600 hover:text-white font-extrabold text-xs transition`;
+          btn.textContent = k === 'BACK' ? '⌫' : k;
+          line.appendChild(btn);
+        });
+        kb.appendChild(line);
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('view-wordle').classList.contains('hidden')) return;
+      if (e.key === 'Enter') handleWordleKey('ENTER');
+      else if (e.key === 'Backspace') handleWordleKey('BACK');
+      else if (/^[a-zA-Z]$/.test(e.key)) handleWordleKey(e.key.toUpperCase());
+    });
+
+    // ==========================================
+    // 2. SAT CROSSWORD (7x7 Grid)
+    // ==========================================
+    const CW_SOLUTION = [
+      ['L','U','C','I','D',null,null],
+      ['U',null,null,null,null,null,null],
+      ['C','A','N','D','O','R',null],
+      ['I',null,null,null,null,null,null],
+      ['D','R','A','M','A',null,null],
+      [null,null,null,null,'T',null,null],
+      ['S','E','R','E','N','E',null]
+    ];
+    // Simplified coherent 6x6 SAT Grid
+    const CW_GRID = [
+      ['I','N','C','I','S','E'],
+      ['N',null,'A',null,'T',null],
+      ['E','R','N','E','S','T'],
+      ['R',null,'D',null,'O',null],
+      ['T','E','R','S','E',null],
+      [null,null,'R',null,'C',null]
+    ];
+
+    function initCrossword() {
+      const container = document.getElementById('crossword-grid');
+      container.className = 'grid grid-cols-6 gap-1 bg-slate-900 p-2 rounded-2xl border-4 border-slate-800';
+      container.innerHTML = '';
+
+      const cluesMap = { '0-0': '1', '0-2': '2', '0-4': '3', '2-0': '4', '4-0': '5' };
+
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 6; c++) {
+          const ans = CW_GRID[r][c];
+          const wrapper = document.createElement('div');
+          wrapper.className = 'relative w-11 h-11 sm:w-12 sm:h-12';
+          if (!ans) {
+            wrapper.className += ' bg-slate-900 rounded';
+          } else {
+            const num = cluesMap[`${r}-${c}`];
+            wrapper.innerHTML = `
+              ${num ? `<span class="absolute top-0.5 left-1 text-[9px] font-extrabold text-slate-500 pointer-events-none">${num}</span>` : ''}
+              <input maxlength="1" data-ans="${ans}" class="cw-input w-full h-full text-center font-extrabold text-lg uppercase rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-violet-500 outline-none" />
+            `;
+          }
+          container.appendChild(wrapper);
+        }
+      }
+      // Update clue text to match exact 6x6 grid words: INCISE, ERNEST, TERSE / INERT, CANDOR, STOIC
+      document.querySelector('#view-crossword ul:nth-of-type(1)').innerHTML = `
+        <li><strong>1 Across:</strong> Cut into a surface cleanly; sharp (6)</li>
+        <li><strong>4 Across:</strong> Sincere and intense conviction (6)</li>
+        <li><strong>5 Across:</strong> Brief and clearly expressed (5)</li>
+      `;
+      document.querySelectorAll('#view-crossword ul')[1].innerHTML = `
+        <li><strong>1 Down:</strong> Chemically inactive or motionless (5)</li>
+        <li><strong>2 Down:</strong> Open and honest expression (6)</li>
+        <li><strong>3 Down:</strong> Enduring hardship without complaint (5)</li>
+      `;
+    }
+
+    function checkCrossword() {
+      let allCorrect = true;
+      document.querySelectorAll('.cw-input').forEach(inp => {
+        if (inp.value.toUpperCase() === inp.dataset.ans) {
+          inp.classList.add('bg-emerald-100', 'dark:bg-emerald-900', 'text-emerald-700');
+        } else {
+          allCorrect = false;
+          inp.classList.remove('bg-emerald-100', 'dark:bg-emerald-900', 'text-emerald-700');
+        }
+      });
+      document.getElementById('crossword-status').textContent = allCorrect
+        ? 'Congratulations! Every SAT vocabulary word is correct!'
+        : 'Highlighted green letters are right — keep going!';
+    }
+
+    function revealCrossword() {
+      document.querySelectorAll('.cw-input').forEach(inp => {
+        inp.value = inp.dataset.ans;
+        inp.classList.add('bg-emerald-100', 'dark:bg-emerald-900');
+      });
+      document.getElementById('crossword-status').textContent = 'All SAT answers revealed.';
+    }
+
+    // ==========================================
+    // 3. STEM LITTLE ALCHEMY
+    // ==========================================
+    const ELEMENTS = [
+      { id: 'water', name: 'Water (H₂O)', icon: '💧', desc: 'Universal polar solvent essential for life.' },
+      { id: 'fire', name: 'Thermal Energy', icon: '🔥', desc: 'Kinetic energy transferred as heat.' },
+      { id: 'earth', name: 'Minerals', icon: '🪨', desc: 'Inorganic crystalline elements in Earth’s crust.' },
+      { id: 'air', name: 'Atmosphere', icon: '💨', desc: '78% Nitrogen, 21% Oxygen gas mixture.' }
+    ];
+
+    const RECIPES = [
+      { a: 'water', b: 'fire', res: { id: 'steam', name: 'Steam', icon: '♨️', desc: 'Gaseous water phase used to drive turbines.' } },
+      { a: 'water', b: 'earth', res: { id: 'clay', name: 'Sediment', icon: '🧱', desc: 'Weathering product of rock and water erosion.' } },
+      { a: 'fire', b: 'earth', res: { id: 'magma', name: 'Magma', icon: '🌋', desc: 'Molten silicate rock beneath Earth’s lithosphere.' } },
+      { a: 'air', b: 'water', res: { id: 'cloud', name: 'Condensation', icon: '☁️', desc: 'Phase transition from water vapor to liquid droplets.' } },
+      { a: 'magma', b: 'water', res: { id: 'obsidian', name: 'Igneous Rock', icon: '🖤', desc: 'Extrusive volcanic glass cooled rapidly.' } },
+      { a: 'earth', b: 'air', res: { id: 'dust', name: 'Aerosol', icon: '🌫️', desc: 'Fine solid particles suspended in gas.' } },
+      { a: 'clay', b: 'fire', res: { id: 'ceramic', name: 'Ceramic', icon: '🏺', desc: 'Heat-hardened inorganic non-metallic material.' } },
+      { a: 'steam', b: 'air', res: { id: 'pressure', name: 'Thermodynamics', icon: '⚙️', desc: 'Conversion of heat into mechanical work.' } },
+      { a: 'cloud', b: 'fire', res: { id: 'lightning', name: 'Plasma', icon: '⚡', desc: 'Ionized fourth state of matter.' } },
+      { a: 'water', b: 'clay', res: { id: 'life', name: 'Organic Cell', icon: '🧬', desc: 'Basic membrane-bound unit of biology.' } },
+      { a: 'life', b: 'air', res: { id: 'plant', name: 'Photosynthesis', icon: '🌱', desc: 'Converting CO₂ and sunlight into glucose and O₂.' } },
+      { a: 'plant', b: 'fire', res: { id: 'carbon', name: 'Carbon', icon: '💎', desc: 'Backbone element of all organic chemistry.' } },
+      { a: 'carbon', b: 'pressure', res: { id: 'diamond', name: 'Allotrope', icon: '💠', desc: 'Crystalline tetrahedral carbon lattice.' } },
+      { a: 'lightning', b: 'air', res: { id: 'ozone', name: 'Ozone (O₃)', icon: '🛡️', desc: 'Stratospheric molecule absorbing UV radiation.' } }
+    ];
+
+    let discovered = [...ELEMENTS];
+    let slot1 = null;
+    let slot2 = null;
+
+    function initAlchemy() {
+      document.getElementById('alchemy-total').textContent = ELEMENTS.length + RECIPES.length;
+      renderAlchemy();
+    }
+
+    function selectElement(el) {
+      if (!slot1) slot1 = el;
+      else if (!slot2) slot2 = el;
+      else { slot1 = el; slot2 = null; }
+
+      renderAlchemy();
+
+      if (slot1 && slot2) {
+        const match = RECIPES.find(r =>
+          (r.a === slot1.id && r.b === slot2.id) || (r.a === slot2.id && r.b === slot1.id)
+        );
+        const banner = document.getElementById('alchemy-result-banner');
+        if (match) {
+          const already = discovered.some(d => d.id === match.res.id);
+          if (!already) discovered.push(match.res);
+          banner.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400">✨ Synthesized ${match.res.icon} ${match.res.name}:</span> ${match.res.desc}`;
+        } else {
+          banner.textContent = `No reaction between ${slot1.name} and ${slot2.name}. Try another pair!`;
+        }
+        setTimeout(() => { slot1 = null; slot2 = null; renderAlchemy(); }, 900);
+      }
+    }
+
+    function clearSlot(num) {
+      if (num === 1) slot1 = null;
+      else slot2 = null;
+      renderAlchemy();
+    }
+
+    function renderAlchemy() {
+      document.getElementById('alchemy-count').textContent = discovered.length;
+
+      const s1 = document.getElementById('slot-1');
+      s1.innerHTML = slot1
+        ? `<span class="text-3xl">${slot1.icon}</span><span class="text-xs font-extrabold mt-1">${slot1.name}</span>`
+        : `<span class="text-xs text-slate-400 font-bold">Slot 1</span>`;
+
+      const s2 = document.getElementById('slot-2');
+      s2.innerHTML = slot2
+        ? `<span class="text-3xl">${slot2.icon}</span><span class="text-xs font-extrabold mt-1">${slot2.name}</span>`
+        : `<span class="text-xs text-slate-400 font-bold">Slot 2</span>`;
+
+      const inv = document.getElementById('alchemy-inventory');
+      inv.innerHTML = '';
+      discovered.forEach(el => {
+        const btn = document.createElement('button');
+        btn.onclick = () => selectElement(el);
+        btn.className = 'p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 hover:bg-violet-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center transition';
+        btn.innerHTML = `
+          <span class="text-2xl mb-1">${el.icon}</span>
+          <span class="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 leading-tight">${el.name}</span>
+        `;
+        inv.appendChild(btn);
+      });
+    }
+
+    window.onload = () => {
+      initWordle();
+      initCrossword();
+      initAlchemy();
+    };
+  </script>
+</body>
+</html>

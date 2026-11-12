@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wall Street Trader Pro — Stock Market Game & Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-blue-600 to-emerald-500 text-white p-2.5 rounded-xl shadow-md">
+          <i class="fa-solid fa-arrow-trend-up text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-xl tracking-tight">Wall Street Trader Pro</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold hidden sm:block">Live Equities & Portfolio Simulator</p>
+        </div>
+      </div>
+
+      <!-- Portfolio Top Bar -->
+      <div class="hidden md:flex items-center gap-5 bg-slate-100 dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Buying Power</span>
+          <span id="cash-balance" class="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">$10,000.00</span>
+        </div>
+        <div class="h-6 w-px bg-slate-300 dark:bg-slate-700"></div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Portfolio Value</span>
+          <span id="total-value" class="font-extrabold text-sm text-blue-600 dark:text-blue-400">$10,000.00</span>
+        </div>
+        <div class="h-6 w-px bg-slate-300 dark:bg-slate-700"></div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Return</span>
+          <span id="total-return" class="font-extrabold text-sm text-slate-700 dark:text-slate-200">+0.00%</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openTutorialModal()" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow transition">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Trading Guide</span>
+        </button>
+        <button onclick="document.documentElement.classList.toggle('dark')" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          <i class="fa-solid fa-moon dark:hidden"></i>
+          <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl w-full mx-auto px-4 py-6 flex-grow space-y-6">
+
+    <!-- Quick Start Tutorial Banner -->
+    <div id="tutorial-banner" class="bg-gradient-to-r from-blue-700 via-indigo-600 to-emerald-600 text-white p-4 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-white/15 rounded-xl">
+          <i class="fa-solid fa-book-open-reader text-xl"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm sm:text-base">New to Investing? Complete the 3-Minute Stock Trading Academy!</h2>
+          <p class="text-xs text-blue-100">Learn how to read stock quotes, execute Buy/Sell orders, and calculate capital gains.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openTutorialModal()" class="px-4 py-2 bg-white text-blue-900 hover:bg-blue-50 font-extrabold text-xs rounded-xl shadow transition">
+          Start Tutorial <i class="fa-solid fa-arrow-right ml-1"></i>
+        </button>
+        <button onclick="document.getElementById('tutorial-banner').classList.add('hidden')" class="p-2 text-blue-200 hover:text-white text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Market Watchlist Pills -->
+    <div id="stock-watchlist" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"></div>
+
+    <!-- Main Trading Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Chart & Market News (8 cols) -->
+      <div class="lg:col-span-8 space-y-6">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 id="active-stock-name" class="font-extrabold text-xl">Apple Inc. (AAPL)</h2>
+                <span id="market-feed-badge" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">LIVE TICKER</span>
+              </div>
+              <p id="active-stock-sector" class="text-xs text-slate-400">Consumer Technology • NASDAQ</p>
+            </div>
+            <div class="text-right">
+              <div id="active-stock-price" class="font-extrabold text-2xl text-slate-900 dark:text-white">$228.50</div>
+              <div id="active-stock-change" class="text-xs font-extrabold text-emerald-600">+1.42% Today</div>
+            </div>
+          </div>
+
+          <div class="h-64 w-full">
+            <canvas id="stockChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Open Positions Table -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Your Active Holdings</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-slate-700 text-slate-400">
+                  <th class="py-2">Ticker</th>
+                  <th class="py-2">Shares</th>
+                  <th class="py-2">Avg Cost</th>
+                  <th class="py-2">Market Price</th>
+                  <th class="py-2">Gain / Loss</th>
+                  <th class="py-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="holdings-table-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                <tr><td colspan="6" class="py-4 text-center text-slate-400">No shares owned yet. Place your first Buy order!</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Execution Ticket (4 cols) -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-blue-500"></i> Order Execution Ticket
+          </h3>
+
+          <div class="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl text-xs font-extrabold">
+            <button id="btn-side-buy" onclick="setOrderSide('BUY')" class="py-2 rounded-lg bg-emerald-600 text-white shadow-sm">BUY</button>
+            <button id="btn-side-sell" onclick="setOrderSide('SELL')" class="py-2 rounded-lg text-slate-500">SELL</button>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-bold">Selected Symbol</span>
+              <span id="ticket-symbol" class="font-extrabold">AAPL</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-bold">Market Price</span>
+              <span id="ticket-price" class="font-extrabold">$228.50</span>
+            </div>
+            <div>
+              <label class="block text-slate-400 font-bold mb-1">Share Quantity</label>
+              <input id="order-qty" type="number" min="1" value="5" oninput="updateOrderEstimate()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 font-extrabold text-sm" />
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+              <span class="font-bold text-slate-500">Estimated Total</span>
+              <span id="order-estimate" class="font-extrabold text-base text-blue-600 dark:text-blue-400">$1,142.50</span>
+            </div>
+          </div>
+
+          <button onclick="executeStockOrder()" id="submit-order-btn" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow transition">
+            Submit Buy Order
+          </button>
+
+          <div id="order-feedback" class="text-xs font-bold text-center min-h-[20px]"></div>
+        </div>
+
+        <!-- Economics Concept Card -->
+        <div class="bg-blue-50 dark:bg-slate-800 p-5 rounded-3xl border border-blue-200 dark:border-slate-700 space-y-2">
+          <span class="text-[10px] font-extrabold uppercase text-blue-600 dark:text-blue-400">Economics Spotlight</span>
+          <h4 class="font-extrabold text-sm">Diversification & Risk Management</h4>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Spreading capital across different sectors (Technology, Healthcare, Retail, Automotive) protects your portfolio when a single industry experiences a downturn.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Interactive Trading Tutorial Modal -->
+  <div id="tutorial-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-blue-600 text-white p-2 rounded-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div>
+            <h3 class="font-extrabold text-base">Stock Market & Trading Academy</h3>
+            <p class="text-xs text-slate-400">Step-by-Step Guide to Buying & Selling Equities</p>
+          </div>
+        </div>
+        <button onclick="closeTutorialModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 flex-grow text-xs">
+        <div class="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl font-extrabold text-center">
+          <button id="tut-btn-1" onclick="switchTutTab(1)" class="py-2 rounded-lg bg-white dark:bg-slate-800 text-blue-600 shadow-sm">1. How to Buy Stocks</button>
+          <button id="tut-btn-2" onclick="switchTutTab(2)" class="py-2 rounded-lg text-slate-500">2. Selling & Capital Gains</button>
+          <button id="tut-btn-3" onclick="switchTutTab(3)" class="py-2 rounded-lg text-slate-500">3. Interactive Practice</button>
+        </div>
+
+        <div id="tut-tab-1" class="space-y-3">
+          <h4 class="font-extrabold text-sm text-blue-600">Step 1: Opening a Long Position (Buying Shares)</h4>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            When you buy shares of a company like Apple (<strong>AAPL</strong>) or Nvidia (<strong>NVDA</strong>), you own fractional equity in that corporation. Your total cost equals <strong>Share Price × Quantity</strong>.
+          </p>
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-1">
+            <div class="font-extrabold">Example Order Calculation:</div>
+            <p>10 Shares of MSFT @ $420.00/share = <strong>$4,200.00</strong> deducted from your Buying Power.</p>
+          </div>
+        </div>
+
+        <div id="tut-tab-2" class="space-y-3 hidden">
+          <h4 class="font-extrabold text-sm text-emerald-600">Step 2: Closing a Position & Capital Gains Math</h4>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            You lock in a profit (or loss) when you <strong>SELL</strong> your shares back to the market.
+          </p>
+          <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-1">
+            <div class="font-extrabold text-emerald-800 dark:text-emerald-300">Capital Gain Formula:</div>
+            <p><strong>Profit = (Sell Price − Average Buy Price) × Shares Sold</strong></p>
+            <p>If you bought 10 shares at $100 ($1,000) and sold at $125 ($1,250), your realized capital gain is <strong>+$250.00 (+25%)</strong>.</p>
+          </div>
+        </div>
+
+        <div id="tut-tab-3" class="space-y-3 hidden">
+          <h4 class="font-extrabold text-sm text-indigo-600">Step 3: Profit Simulator Calculator</h4>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="font-bold block mb-1">Buy Price ($)</label>
+              <input id="sim-buy" type="number" value="150" oninput="calcSimProfit()" class="w-full p-2 rounded-lg border bg-slate-50 dark:bg-slate-900" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Sell Price ($)</label>
+              <input id="sim-sell" type="number" value="180" oninput="calcSimProfit()" class="w-full p-2 rounded-lg border bg-slate-50 dark:bg-slate-900" />
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Shares</label>
+              <input id="sim-qty" type="number" value="10" oninput="calcSimProfit()" class="w-full p-2 rounded-lg border bg-slate-50 dark:bg-slate-900" />
+            </div>
+          </div>
+          <div id="sim-output" class="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 font-extrabold text-indigo-800 dark:text-indigo-200">
+            Simulated Profit: +$300.00 (+20.00% Return)
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        <button onclick="closeTutorialModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow">Start Trading</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STOCKS = {
+      AAPL: { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Consumer Technology', price: 228.50, prevClose: 225.30, history: [222, 224, 223.5, 226, 227.2, 228.5] },
+      NVDA: { symbol: 'NVDA', name: 'NVIDIA Corp.', sector: 'Semiconductors & AI', price: 138.20, prevClose: 134.00, history: [130, 132, 135, 134.5, 137, 138.2] },
+      MSFT: { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Cloud & Enterprise Software', price: 424.10, prevClose: 421.80, history: [418, 420, 419, 422, 423, 424.1] },
+      TSLA: { symbol: 'TSLA', name: 'Tesla Inc.', sector: 'Electric Vehicles & Energy', price: 254.80, prevClose: 260.10, history: [264, 262, 259, 257, 256, 254.8] },
+      AMZN: { symbol: 'AMZN', name: 'Amazon.com Inc.', sector: 'E-Commerce & AWS', price: 196.40, prevClose: 194.10, history: [191, 192.5, 194, 193.8, 195.2, 196.4] },
+      GOOGL: { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Digital Media & AI', price: 174.90, prevClose: 173.20, history: [171, 172, 173.5, 173, 174.1, 174.9] }
+    };
+
+    let selectedSymbol = 'AAPL';
+    let orderSide = 'BUY';
+    let cash = 10000;
+    let holdings = {}; // { AAPL: { shares: 5, avgCost: 220 } }
+    let stockChart = null;
+
+    async function fetchLiveQuotes() {
+      // Attempt live quote pull via public Yahoo/Stooq proxy fallback, with realistic market tick engine
+      try {
+        const res = await fetch('https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL,NVDA,MSFT,TSLA,AMZN,GOOGL');
+        if (res.ok) {
+          const data = await res.json();
+          const results = data?.quoteResponse?.result || [];
+          results.forEach(q => {
+            if (STOCKS[q.symbol] && q.regularMarketPrice) {
+              STOCKS[q.symbol].price = q.regularMarketPrice;
+              STOCKS[q.symbol].prevClose = q.regularMarketPreviousClose || q.regularMarketPrice;
+            }
+          });
+        }
+      } catch (e) {
+        // Fallback live market tick simulation when CORS/network blocks external API
+      }
+    }
+
+    function tickMarketPrices() {
+      Object.values(STOCKS).forEach(s => {
+        const delta = (Math.random() - 0.49) * (s.price * 0.004);
+        s.price = Math.max(5, Number((s.price + delta).toFixed(2)));
+        s.history.push(s.price);
+        if (s.history.length > 20) s.history.shift();
+      });
+      renderAll();
+    }
+
+    function selectStock(sym) {
+      selectedSymbol = sym;
+      renderAll();
+    }
+
+    function setOrderSide(side) {
+      orderSide = side;
+      const buyBtn = document.getElementById('btn-side-buy');
+      const sellBtn = document.getElementById('btn-side-sell');
+      const submitBtn = document.getElementById('submit-order-btn');
+
+      if (side === 'BUY') {
+        buyBtn.className = 'py-2 rounded-lg bg-emerald-600 text-white shadow-sm';
+        sellBtn.className = 'py-2 rounded-lg text-slate-500';
+        submitBtn.className = 'w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow transition';
+        submitBtn.textContent = 'Submit Buy Order';
+      } else {
+        sellBtn.className = 'py-2 rounded-lg bg-rose-600 text-white shadow-sm';
+        buyBtn.className = 'py-2 rounded-lg text-slate-500';
+        submitBtn.className = 'w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-sm shadow transition';
+        submitBtn.textContent = 'Submit Sell Order';
+      }
+      updateOrderEstimate();
+    }
+
+    function updateOrderEstimate() {
+      const qty = Math.max(0, parseInt(document.getElementById('order-qty').value) || 0);
+      const price = STOCKS[selectedSymbol].price;
+      document.getElementById('order-estimate').textContent = `$${(qty * price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function executeStockOrder() {
+      const qty = parseInt(document.getElementById('order-qty').value) || 0;
+      const stock = STOCKS[selectedSymbol];
+      const total = qty * stock.price;
+      const fb = document.getElementById('order-feedback');
+
+      if (qty <= 0) {
+        fb.className = 'text-xs font-bold text-center text-rose-500';
+        fb.textContent = 'Enter a valid share quantity.';
+        return;
+      }
+
+      if (orderSide === 'BUY') {
+        if (total > cash) {
+          fb.className = 'text-xs font-bold text-center text-rose-500';
+          fb.textContent = 'Insufficient buying power for this order.';
+          return;
+        }
+        cash -= total;
+        if (!holdings[selectedSymbol]) {
+          holdings[selectedSymbol] = { shares: qty, avgCost: stock.price };
+        } else {
+          const prev = holdings[selectedSymbol];
+          const newShares = prev.shares + qty;
+          prev.avgCost = ((prev.shares * prev.avgCost) + total) / newShares;
+          prev.shares = newShares;
+        }
+        fb.className = 'text-xs font-bold text-center text-emerald-600';
+        fb.textContent = `Bought ${qty} shares of ${selectedSymbol} @ $${stock.price.toFixed(2)}!`;
+      } else {
+        const pos = holdings[selectedSymbol];
+        if (!pos || pos.shares < qty) {
+          fb.className = 'text-xs font-bold text-center text-rose-500';
+          fb.textContent = `You do not own ${qty} shares of ${selectedSymbol} to sell.`;
+          return;
+        }
+        cash += total;
+        pos.shares -= qty;
+        if (pos.shares === 0) delete holdings[selectedSymbol];
+        fb.className = 'text-xs font-bold text-center text-blue-600';
+        fb.textContent = `Sold ${qty} shares of ${selectedSymbol} @ $${stock.price.toFixed(2)}!`;
+      }
+      renderAll();
+    }
+
+    function renderAll() {
+      // Watchlist
+      const wl = document.getElementById('stock-watchlist');
+      wl.innerHTML = '';
+      Object.values(STOCKS).forEach(s => {
+        const pct = ((s.price - s.prevClose) / s.prevClose) * 100;
+        const isUp = pct >= 0;
+        const active = s.symbol === selectedSymbol;
+        const card = document.createElement('button');
+        card.onclick = () => selectStock(s.symbol);
+        card.className = `p-3 rounded-2xl border text-left transition ${
+          active
+            ? 'bg-blue-50 dark:bg-slate-800 border-blue-500 ring-2 ring-blue-500/30'
+            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-300'
+        }`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-xs">${s.symbol}</span>
+            <span class="text-[10px] font-extrabold ${isUp ? 'text-emerald-600' : 'text-rose-500'}">${isUp ? '+' : ''}${pct.toFixed(2)}%</span>
+          </div>
+          <div class="font-extrabold text-sm mt-1">$${s.price.toFixed(2)}</div>
+        `;
+        wl.appendChild(card);
+      });
+
+      // Active Stock Header & Ticket
+      const cur = STOCKS[selectedSymbol];
+      const curPct = ((cur.price - cur.prevClose) / cur.prevClose) * 100;
+      document.getElementById('active-stock-name').textContent = `${cur.name} (${cur.symbol})`;
+      document.getElementById('active-stock-sector').textContent = `${cur.sector} • NASDAQ`;
+      document.getElementById('active-stock-price').textContent = `$${cur.price.toFixed(2)}`;
+      const chgEl = document.getElementById('active-stock-change');
+      chgEl.textContent = `${curPct >= 0 ? '+' : ''}${curPct.toFixed(2)}% Today`;
+      chgEl.className = `text-xs font-extrabold ${curPct >= 0 ? 'text-emerald-600' : 'text-rose-500'}`;
+
+      document.getElementById('ticket-symbol').textContent = cur.symbol;
+      document.getElementById('ticket-price').textContent = `$${cur.price.toFixed(2)}`;
+      updateOrderEstimate();
+
+      // Holdings & Portfolio Totals
+      let equityVal = 0;
+      const tbody = document.getElementById('holdings-table-body');
+      const keys = Object.keys(holdings);
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400">No shares owned yet. Place your first Buy order!</td></tr>`;
+      } else {
+        tbody.innerHTML = '';
+        keys.forEach(sym => {
+          const pos = holdings[sym];
+          const mkt = STOCKS[sym].price;
+          const val = pos.shares * mkt;
+          const gain = (mkt - pos.avgCost) * pos.shares;
+          equityVal += val;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-2.5 font-extrabold">${sym}</td>
+            <td class="py-2.5">${pos.shares}</td>
+            <td class="py-2.5">$${pos.avgCost.toFixed(2)}</td>
+            <td class="py-2.5 font-bold">$${mkt.toFixed(2)}</td>
+            <td class="py-2.5 font-extrabold ${gain >= 0 ? 'text-emerald-600' : 'text-rose-500'}">${gain >= 0 ? '+' : ''}$${gain.toFixed(2)}</td>
+            <td class="py-2.5 text-right">
+              <button onclick="selectStock('${sym}'); setOrderSide('SELL')" class="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-extrabold">Sell</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const totalVal = cash + equityVal;
+      const retPct = ((totalVal - 10000) / 10000) * 100;
+      document.getElementById('cash-balance').textContent = `$${cash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('total-value').textContent = `$${totalVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const retEl = document.getElementById('total-return');
+      retEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+      retEl.className = `font-extrabold text-sm ${retPct >= 0 ? 'text-emerald-600' : 'text-rose-500'}`;
+
+      if (stockChart) {
+        stockChart.data.labels = cur.history.map((_, i) => `T-${cur.history.length - 1 - i}`);
+        stockChart.data.datasets[0].data = cur.history;
+        stockChart.update('none');
+      }
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('stockChart').getContext('2d');
+      const cur = STOCKS[selectedSymbol];
+      stockChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: cur.history.map((_, i) => `T-${cur.history.length - 1 - i}`),
+          datasets: [{
+            data: cur.history,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { grid: { display: false } } }
+        }
+      });
+    }
+
+    function openTutorialModal() { document.getElementById('tutorial-modal').classList.remove('hidden'); }
+    function closeTutorialModal() { document.getElementById('tutorial-modal').classList.add('hidden'); }
+    function switchTutTab(n) {
+      [1, 2, 3].forEach(i => {
+        document.getElementById(`tut-tab-${i}`).classList.toggle('hidden', i !== n);
+        document.getElementById(`tut-btn-${i}`).className = i === n
+          ? 'py-2 rounded-lg bg-white dark:bg-slate-800 text-blue-600 shadow-sm'
+          : 'py-2 rounded-lg text-slate-500';
+      });
+    }
+    function calcSimProfit() {
+      const b = parseFloat(document.getElementById('sim-buy').value) || 0;
+      const s = parseFloat(document.getElementById('sim-sell').value) || 0;
+      const q = parseFloat(document.getElementById('sim-qty').value) || 0;
+      const profit = (s - b) * q;
+      const pct = b > 0 ? ((s - b) / b) * 100 : 0;
+      document.getElementById('sim-output').textContent = `Simulated Profit: ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% Return)`;
+    }
+
+    window.onload = async () => {
+      await fetchLiveQuotes();
+      initChart();
+      renderAll();
+      setInterval(tickMarketPrices, 3500);
+    };
+  </script>
+</body>
+</html>

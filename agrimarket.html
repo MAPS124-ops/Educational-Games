@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriMarket Pro - Farm & Commodity Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-emerald-50/40 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+  <!-- Main Sticky Header -->
+  <header class="bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-emerald-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-emerald-600 to-green-500 text-white p-2.5 rounded-xl shadow-md">
+          <i class="fa-solid fa-wheat-awn text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-emerald-700 to-green-600 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">AgriMarket Pro</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold hidden sm:block">CBOT Commodity Trading & Sustainable Agronomy</p>
+        </div>
+      </div>
+
+      <!-- Financial Quick Dashboard Stats -->
+      <div class="hidden md:flex items-center gap-5 bg-emerald-50 dark:bg-slate-900/90 px-4 py-2 rounded-xl border border-emerald-200/80 dark:border-slate-700">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Operating Capital</span>
+          <span id="stat-capital" class="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">$50,000.00</span>
+        </div>
+        <div class="h-6 w-px bg-emerald-200 dark:bg-slate-700"></div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Acreage</span>
+          <span id="stat-acres" class="font-extrabold text-sm text-slate-800 dark:text-slate-100">120 Acres</span>
+        </div>
+        <div class="h-6 w-px bg-emerald-200 dark:bg-slate-700"></div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Harvest Storage</span>
+          <span id="stat-bushels" class="font-extrabold text-sm text-amber-600 dark:text-amber-400">0 Bu</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-2">
+        <button onclick="openAgriGuideModal()" class="px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 font-bold text-xs flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Agri Guide</span>
+        </button>
+        <button onclick="advanceAgriSeason()" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow transition">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>Next Season</span>
+        </button>
+        <button onclick="document.documentElement.classList.toggle('dark')" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          <i class="fa-solid fa-moon dark:hidden"></i>
+          <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow space-y-6 w-full">
+
+    <!-- Status Notification Bar -->
+    <div id="agri-toast" class="hidden p-3 rounded-xl bg-amber-100 dark:bg-amber-950 border border-amber-300 text-amber-900 dark:text-amber-200 text-xs font-extrabold text-center"></div>
+
+    <!-- Live Futures Market Ticker Bar -->
+    <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 overflow-x-auto custom-scrollbar">
+      <div class="flex items-center gap-2 text-xs font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+        <i class="fa-solid fa-chart-line text-emerald-500"></i> CBOT Futures Live:
+      </div>
+      <div id="futures-ticker-container" class="flex items-center gap-4 text-xs font-bold whitespace-nowrap"></div>
+    </div>
+
+    <!-- Main Workspace Dashboard Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column: Field Acreage & Planting -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-seedling text-emerald-500"></i> Farm Acreage & Planting
+          </h2>
+          <span id="season-badge" class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-extrabold text-xs">
+            Spring Year 1
+          </span>
+        </div>
+
+        <div id="field-plots-grid" class="grid grid-cols-2 gap-3"></div>
+
+        <div class="p-4 bg-emerald-50/60 dark:bg-slate-900/60 rounded-xl border border-emerald-200/60 dark:border-slate-700 space-y-3">
+          <h3 class="text-xs font-extrabold text-slate-700 dark:text-slate-200">Agronomic Inputs</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="applyFertilizer()" class="p-2 bg-white dark:bg-slate-800 hover:bg-emerald-100 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
+              <i class="fa-solid fa-flask text-emerald-600"></i> Nitrogen ($800)
+            </button>
+            <button onclick="runDripIrrigation()" class="p-2 bg-white dark:bg-slate-800 hover:bg-emerald-100 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
+              <i class="fa-solid fa-droplet text-blue-500"></i> Irrigate ($500)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Column: Live Commodity Chart & Grain Elevator Desk -->
+      <div class="space-y-6">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 id="chart-commodity-title" class="font-extrabold text-base">Corn Futures (CBOT: ZC)</h2>
+              <p class="text-xs text-slate-400">Futures contract price per bushel ($/Bu)</p>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="switchCommodityChart('CORN')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">Corn</button>
+              <button onclick="switchCommodityChart('SOY')" class="px-2.5 py-1 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-100">Soy</button>
+              <button onclick="switchCommodityChart('WHEAT')" class="px-2.5 py-1 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-100">Wheat</button>
+            </div>
+          </div>
+          <div class="h-48 w-full"><canvas id="commodityChart"></canvas></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+          <h2 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-warehouse text-amber-500"></i> Grain Elevator Order Desk
+          </h2>
+          <div id="elevator-inventory-list" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Right Column: Machinery Fleet -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <h2 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-truck-monster text-blue-500"></i> Heavy Equipment & Machinery Fleet
+        </h2>
+        <div id="equipment-list" class="space-y-2.5"></div>
+        <div class="p-3.5 bg-blue-50 dark:bg-slate-900/80 rounded-xl border border-blue-200 dark:border-slate-700 space-y-1">
+          <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Yield Efficiency Tip</span>
+          <p class="text-xs text-slate-600 dark:text-slate-300">
+            Owning a Combine Harvester and 16-Row Planter boosts harvest yield by up to +25% each Fall!
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Interactive Agri Guide Modal -->
+  <div id="agri-guide-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-emerald-600 text-white p-2 rounded-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div>
+            <h3 class="font-extrabold text-base">Agribusiness & Agronomy Academy</h3>
+            <p class="text-xs text-slate-400">Crop Rotation, Soil Science & Commodity Futures Trading</p>
+          </div>
+        </div>
+        <button onclick="closeAgriGuideModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-6 flex-grow text-xs">
+        <div class="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl font-bold text-center">
+          <button id="agri-tab-btn-1" onclick="switchAgriTab(1)" class="py-2 rounded-lg bg-white dark:bg-slate-800 text-emerald-600 shadow-sm">1. Soil & Nitrogen</button>
+          <button id="agri-tab-btn-2" onclick="switchAgriTab(2)" class="py-2 rounded-lg text-slate-500">2. Machinery ROI</button>
+          <button id="agri-tab-btn-3" onclick="switchAgriTab(3)" class="py-2 rounded-lg text-slate-500">3. CBOT Futures</button>
+        </div>
+
+        <div id="agri-tab-1" class="space-y-3">
+          <h4 class="font-extrabold text-sm text-emerald-700 dark:text-emerald-300">Nitrogen Fixing & Crop Rotation</h4>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Corn consumes heavy amounts of soil nitrogen. Rotating fields with Soybeans fixes atmospheric nitrogen back into the soil through root-nodule bacteria, restoring fertility naturally.
+          </p>
+        </div>
+
+        <div id="agri-tab-2" class="space-y-3 hidden">
+          <h4 class="font-extrabold text-sm text-blue-700 dark:text-blue-300">Capital Investment & Harvest Efficiency</h4>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Investing operating capital into precision planters and combine harvesters increases bushels harvested per acre every Fall season.
+          </p>
+        </div>
+
+        <div id="agri-tab-3" class="space-y-3 hidden">
+          <h4 class="font-extrabold text-sm text-amber-700 dark:text-amber-300">Grain Elevator & Futures Hedging</h4>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            CBOT grain prices fluctuate each season. Store harvested bushels in your silos and sell at the Grain Elevator when Corn, Soybeans, or Wheat rally!
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        <button onclick="closeAgriGuideModal()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow">Let's Farm!</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let capital = 50000;
+    let seasonIndex = 0;
+    const SEASONS = ['Spring Year 1', 'Summer Year 1', 'Fall Year 1', 'Winter Year 1', 'Spring Year 2', 'Summer Year 2', 'Fall Year 2'];
+
+    let commodities = {
+      CORN: { name: 'Corn', symbol: 'ZC', price: 4.65, history: [4.40, 4.48, 4.55, 4.60, 4.65], storage: 0, yieldPerAcre: 180 },
+      SOY: { name: 'Soybeans', symbol: 'ZS', price: 11.80, history: [11.20, 11.45, 11.60, 11.70, 11.80], storage: 0, yieldPerAcre: 52 },
+      WHEAT: { name: 'Winter Wheat', symbol: 'ZW', price: 5.95, history: [5.70, 5.80, 5.85, 5.90, 5.95], storage: 0, yieldPerAcre: 75 }
+    };
+
+    let activeChartCommodity = 'CORN';
+    let commodityChartInstance = null;
+
+    let plots = [
+      { id: 1, name: 'Field 1 (30 Ac)', crop: 'CORN', status: 'Growing', nitrogen: 85, moisture: 90 },
+      { id: 2, name: 'Field 2 (30 Ac)', crop: 'SOY', status: 'Growing', nitrogen: 95, moisture: 85 },
+      { id: 3, name: 'Field 3 (30 Ac)', crop: 'WHEAT', status: 'Growing', nitrogen: 75, moisture: 80 },
+      { id: 4, name: 'Field 4 (30 Ac)', crop: null, status: 'Fallow', nitrogen: 60, moisture: 70 }
+    ];
+
+    let equipment = [
+      { id: 'tractor', name: 'John Deere 8R Tractor', price: 18000, owned: true, boost: 'Prepares soil fields 20% faster' },
+      { id: 'harvester', name: 'Class VII Combine Harvester', price: 25000, owned: false, boost: '+15% Harvest Yield Bonus' },
+      { id: 'planter', name: 'Precision 16-Row Planter', price: 12000, owned: false, boost: '+10% Seed Germination Bonus' },
+      { id: 'drip', name: 'Smart Drip Irrigation System', price: 9500, owned: false, boost: 'Maintains optimal soil moisture' }
+    ];
+
+    function showToast(msg) {
+      const t = document.getElementById('agri-toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3500);
+    }
+
+    function renderTicker() {
+      const container = document.getElementById('futures-ticker-container');
+      container.innerHTML = '';
+      Object.keys(commodities).forEach(key => {
+        const c = commodities[key];
+        const last = c.history[c.history.length - 2] || c.price;
+        const diff = c.price - last;
+        const isUp = diff >= 0;
+        const pill = document.createElement('div');
+        pill.className = "px-3 py-1.5 rounded-xl border flex items-center gap-2 " +
+          (isUp ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-700 dark:text-rose-400");
+        pill.innerHTML = `
+          <span>${c.name} (${c.symbol}): <strong>$${c.price.toFixed(2)}</strong>/Bu</span>
+          <span class="text-[10px] font-extrabold"><i class="fa-solid fa-arrow-${isUp ? 'up' : 'down'}"></i> ${Math.abs(diff).toFixed(2)}</span>
+        `;
+        container.appendChild(pill);
+      });
+    }
+
+    function renderPlots() {
+      const grid = document.getElementById('field-plots-grid');
+      grid.innerHTML = '';
+      plots.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2";
+        const cropName = p.crop ? commodities[p.crop].name : 'Fallow (Unplanted)';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-xs">${p.name}</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${p.crop ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600'}">${p.status}</span>
+          </div>
+          <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400">${cropName}</div>
+          <div class="space-y-1 text-[11px] text-slate-500">
+            <div class="flex justify-between"><span>Soil Nitrogen:</span><span class="font-bold text-slate-700 dark:text-slate-300">${p.nitrogen}%</span></div>
+            <div class="flex justify-between"><span>Moisture Level:</span><span class="font-bold text-slate-700 dark:text-slate-300">${p.moisture}%</span></div>
+          </div>
+          ${!p.crop || p.status === 'Harvested' ? `
+            <div class="grid grid-cols-3 gap-1 pt-1">
+              <button onclick="plantCrop(${p.id}, 'CORN')" class="py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded">Corn</button>
+              <button onclick="plantCrop(${p.id}, 'SOY')" class="py-1 bg-teal-600 hover:bg-teal-700 text-white font-bold text-[10px] rounded">Soy</button>
+              <button onclick="plantCrop(${p.id}, 'WHEAT')" class="py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] rounded">Wheat</button>
+            </div>
+          ` : ''}
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function plantCrop(plotId, cropKey) {
+      const plot = plots.find(p => p.id === plotId);
+      if (!plot) return;
+      plot.crop = cropKey;
+      plot.status = 'Growing';
+      if (cropKey === 'SOY') plot.nitrogen = Math.min(100, plot.nitrogen + 15);
+      renderPlots();
+      showToast(`Planted ${commodities[cropKey].name} on ${plot.name}!`);
+    }
+
+    function renderElevator() {
+      const container = document.getElementById('elevator-inventory-list');
+      container.innerHTML = '';
+      Object.keys(commodities).forEach(key => {
+        const c = commodities[key];
+        const card = document.createElement('div');
+        card.className = "p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="font-extrabold text-xs">${c.name} Grain Storage</div>
+            <div class="text-xs text-slate-400">${c.storage.toLocaleString()} Bushels in Silo</div>
+          </div>
+          <button onclick="sellGrain('${key}')" ${c.storage <= 0 ? 'disabled' : ''} class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-extrabold text-xs rounded-xl shadow transition">
+            Sell @ $${c.price.toFixed(2)}/Bu
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function sellGrain(key) {
+      const c = commodities[key];
+      if (c.storage <= 0) return;
+      const earnings = c.storage * c.price;
+      capital += earnings;
+      showToast(`Sold ${c.storage.toLocaleString()} Bu of ${c.name} for $${earnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`);
+      c.storage = 0;
+      updateDashboardStats();
+      renderElevator();
+    }
+
+    function renderEquipment() {
+      const container = document.getElementById('equipment-list');
+      container.innerHTML = '';
+      equipment.forEach(e => {
+        const card = document.createElement('div');
+        card.className = "p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3";
+        card.innerHTML = `
+          <div>
+            <div class="font-extrabold text-xs">${e.name}</div>
+            <div class="text-[11px] text-slate-400">${e.boost}</div>
+          </div>
+          ${e.owned ? `
+            <span class="text-[10px] font-extrabold text-emerald-600 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-lg">Owned</span>
+          ` : `
+            <button onclick="buyEquipment('${e.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow transition">
+              Buy $${e.price.toLocaleString()}
+            </button>
+          `}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function buyEquipment(id) {
+      const item = equipment.find(e => e.id === id);
+      if (!item || capital < item.price) {
+        showToast("Insufficient operating capital to purchase this equipment!");
+        return;
+      }
+      capital -= item.price;
+      item.owned = true;
+      updateDashboardStats();
+      renderEquipment();
+      showToast(`Purchased ${item.name}!`);
+    }
+
+    function advanceAgriSeason() {
+      seasonIndex = (seasonIndex + 1) % SEASONS.length;
+      const seasonName = SEASONS[seasonIndex];
+      document.getElementById('season-badge').textContent = seasonName;
+
+      const yieldMult = 1
+        + (equipment.find(e => e.id === 'harvester')?.owned ? 0.15 : 0)
+        + (equipment.find(e => e.id === 'planter')?.owned ? 0.10 : 0);
+
+      Object.keys(commodities).forEach(key => {
+        const c = commodities[key];
+        const change = (Math.random() - 0.48) * 0.35;
+        c.price = Math.max(2.0, Number((c.price + change).toFixed(2)));
+        c.history.push(c.price);
+        if (c.history.length > 10) c.history.shift();
+
+        if (seasonName.startsWith('Fall')) {
+          plots.forEach(p => {
+            if (p.crop === key && p.status === 'Growing') {
+              const soilFactor = (p.nitrogen + p.moisture) / 200;
+              const harvested = Math.round(30 * c.yieldPerAcre * yieldMult * Math.max(0.6, soilFactor));
+              c.storage += harvested;
+              p.status = 'Harvested';
+              if (key === 'CORN') p.nitrogen = Math.max(35, p.nitrogen - 20);
+            }
+          });
+        }
+      });
+
+      if (seasonName.startsWith('Fall')) showToast('Fall Harvest complete! Bushels transferred to your grain silos.');
+
+      renderTicker();
+      renderPlots();
+      renderElevator();
+      updateChartData();
+      updateDashboardStats();
+    }
+
+    function applyFertilizer() {
+      if (capital < 800) {
+        showToast("Insufficient capital: Nitrogen application costs $800.");
+        return;
+      }
+      capital -= 800;
+      plots.forEach(p => p.nitrogen = Math.min(100, p.nitrogen + 25));
+      updateDashboardStats();
+      renderPlots();
+      showToast("Applied soil nitrogen across all 120 acres!");
+    }
+
+    function runDripIrrigation() {
+      if (capital < 500) {
+        showToast("Insufficient capital: Drip irrigation costs $500.");
+        return;
+      }
+      capital -= 500;
+      plots.forEach(p => p.moisture = Math.min(100, p.moisture + 30));
+      updateDashboardStats();
+      renderPlots();
+      showToast("Drip irrigation completed! Soil moisture restored.");
+    }
+
+    function updateDashboardStats() {
+      document.getElementById('stat-capital').textContent = `$${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      let totalBu = 0;
+      Object.keys(commodities).forEach(k => totalBu += commodities[k].storage);
+      document.getElementById('stat-bushels').textContent = `${totalBu.toLocaleString()} Bu`;
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('commodityChart').getContext('2d');
+      const data = commodities[activeChartCommodity].history;
+      commodityChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map((_, i) => `Period ${i + 1}`),
+          datasets: [{
+            label: `${commodities[activeChartCommodity].name} ($/Bu)`,
+            data: data,
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { grid: { color: 'rgba(156, 163, 175, 0.1)' } }, x: { grid: { display: false } } }
+        }
+      });
+    }
+
+    function switchCommodityChart(key) {
+      activeChartCommodity = key;
+      document.getElementById('chart-commodity-title').textContent = `${commodities[key].name} Futures (CBOT: ${commodities[key].symbol})`;
+      updateChartData();
+    }
+
+    function updateChartData() {
+      if (!commodityChartInstance) return;
+      const data = commodities[activeChartCommodity].history;
+      commodityChartInstance.data.labels = data.map((_, i) => `Period ${i + 1}`);
+      commodityChartInstance.data.datasets[0].data = data;
+      commodityChartInstance.update();
+    }
+
+    function openAgriGuideModal() { document.getElementById('agri-guide-modal').classList.remove('hidden'); }
+    function closeAgriGuideModal() { document.getElementById('agri-guide-modal').classList.add('hidden'); }
+    function switchAgriTab(tabNum) {
+      [1, 2, 3].forEach(n => {
+        document.getElementById(`agri-tab-${n}`).classList.toggle('hidden', n !== tabNum);
+        document.getElementById(`agri-tab-btn-${n}`).className = n === tabNum
+          ? "py-2 rounded-lg bg-white dark:bg-slate-800 text-emerald-600 shadow-sm font-bold"
+          : "py-2 rounded-lg text-slate-500 font-bold";
+      });
+    }
+
+    window.onload = () => {
+      renderTicker();
+      renderPlots();
+      renderElevator();
+      renderEquipment();
+      initChart();
+      updateDashboardStats();
+    };
+  </script>
+</body>
+</html>

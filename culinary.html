@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Culinary Alchemist — Food Network Bake & Chemistry Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+</head>
+<body class="bg-amber-50/40 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-amber-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-amber-600 to-rose-500 text-white p-2.5 rounded-xl shadow-md">
+          <i class="fa-solid fa-fire-burner text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-xl tracking-tight">Culinary Alchemist</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold hidden sm:block">Food Science, Ratios & Pastry Studio</p>
+        </div>
+      </div>
+
+      <div class="hidden md:flex items-center gap-5 bg-amber-50 dark:bg-slate-900 px-4 py-2 rounded-xl border border-amber-200 dark:border-slate-700">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Critic Prestige</span>
+          <span id="chef-score" class="font-extrabold text-sm text-amber-600 dark:text-amber-400">0 Pts</span>
+        </div>
+        <div class="h-6 w-px bg-amber-200 dark:bg-slate-700"></div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Dishes Perfected</span>
+          <span id="dishes-completed" class="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">0 / 4</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openChefGuideModal()" class="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow transition">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Chef Guide</span>
+        </button>
+        <button onclick="document.documentElement.classList.toggle('dark')" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          <i class="fa-solid fa-moon dark:hidden"></i>
+          <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl w-full mx-auto px-4 py-6 flex-grow space-y-6">
+
+    <!-- Recipe Selection Cards -->
+    <div id="recipe-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+    <!-- Kitchen Workbench -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Pantry Ingredients (4 cols) -->
+      <div class="lg:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+            <i class="fa-solid fa-jar text-amber-500 mr-1.5"></i> Kitchen Pantry
+          </h2>
+          <button onclick="clearBowl()" class="text-xs font-bold text-rose-500 hover:underline">Empty Bowl</button>
+        </div>
+        <div id="pantry-grid" class="grid grid-cols-2 gap-2.5"></div>
+      </div>
+
+      <!-- Mixing Bowl & Recipe Target (4 cols) -->
+      <div class="lg:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase text-amber-600">Active Challenge</span>
+          <h2 id="current-recipe-title" class="font-extrabold text-lg">Molten Chocolate Lava Cake</h2>
+          <p id="current-recipe-desc" class="text-xs text-slate-500 dark:text-slate-400 mt-1"></p>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-slate-900 border border-amber-200/70 dark:border-slate-700 space-y-2">
+          <div class="text-[11px] font-extrabold uppercase text-amber-800 dark:text-amber-300">Required Formula (Click Pantry Items to Measure)</div>
+          <div id="recipe-requirements" class="space-y-1 text-xs"></div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-xs font-extrabold text-slate-500">Current Mixing Bowl:</div>
+          <div id="mixing-bowl" class="min-h-[90px] p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-wrap gap-2 items-center">
+            <span class="text-xs text-slate-400">Bowl is empty...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Precision Oven Controls (4 cols) -->
+      <div class="lg:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+          <i class="fa-solid fa-temperature-high text-rose-500 mr-1.5"></i> Convection Oven Calibration
+        </h2>
+
+        <div class="p-4 rounded-2xl bg-slate-900 text-white space-y-4 border-4 border-slate-700">
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-400">Oven Temperature (°F)</span>
+              <span id="temp-display" class="text-amber-400 font-extrabold">375°F</span>
+            </div>
+            <input id="temp-input" type="range" min="300" max="475" step="25" value="375" oninput="document.getElementById('temp-display').textContent = this.value + '°F'" class="w-full accent-amber-500" />
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-400">Bake Duration (Minutes)</span>
+              <span id="time-display" class="text-emerald-400 font-extrabold">14 Min</span>
+            </div>
+            <input id="time-input" type="range" min="8" max="45" step="1" value="14" oninput="document.getElementById('time-display').textContent = this.value + ' Min'" class="w-full accent-emerald-500" />
+          </div>
+        </div>
+
+        <button onclick="bakeDish()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bell-concierge"></i> Bake & Present to Critics
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Critic Evaluation Modal -->
+  <div id="result-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4 text-center">
+      <div id="result-stars" class="text-3xl text-amber-400">⭐⭐⭐⭐⭐</div>
+      <h3 id="result-title" class="font-extrabold text-xl">Critics' Verdict</h3>
+      <p id="result-feedback" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+      <div id="result-science" class="p-3.5 rounded-2xl bg-amber-50 dark:bg-slate-900 border border-amber-200 dark:border-slate-700 text-xs text-left"></div>
+      <button onclick="document.getElementById('result-modal').classList.add('hidden')" class="w-full py-2.5 rounded-xl bg-amber-600 text-white font-extrabold text-xs">Continue Cooking</button>
+    </div>
+  </div>
+
+  <!-- Chef Guide Modal -->
+  <div id="chef-guide-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="font-extrabold text-base">Culinary Science & Baking Guide</h3>
+        <button onclick="closeChefGuideModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto text-xs">
+        <div class="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl font-extrabold text-center">
+          <button id="guide-tab-btn-1" onclick="switchGuideTab(1)" class="py-2 rounded-lg bg-white dark:bg-slate-800 text-amber-600 shadow-sm">1. Ratio Math</button>
+          <button id="guide-tab-btn-2" onclick="switchGuideTab(2)" class="py-2 rounded-lg text-slate-500">2. Heat Chemistry</button>
+          <button id="guide-tab-btn-3" onclick="switchGuideTab(3)" class="py-2 rounded-lg text-slate-500">3. Critic Scoring</button>
+        </div>
+        <div id="guide-tab-1" class="space-y-2">
+          <h4 class="font-extrabold text-sm text-amber-600">Precision Ingredient Ratios</h4>
+          <p class="text-slate-600 dark:text-slate-300">Baking is edible chemistry. Click each required ingredient the exact number of units listed in the recipe formula before placing your dish in the oven.</p>
+        </div>
+        <div id="guide-tab-2" class="space-y-2 hidden">
+          <h4 class="font-extrabold text-sm text-rose-600">Maillard Reaction & Steam Expansion</h4>
+          <p class="text-slate-600 dark:text-slate-300">Temperatures above 325°F trigger the Maillard reaction between amino acids and reducing sugars, creating golden crusts and complex aromas. Excess heat burns exteriors before centers set.</p>
+        </div>
+        <div id="guide-tab-3" class="space-y-2 hidden">
+          <h4 class="font-extrabold text-sm text-emerald-600">How Food Critics Grade Your Dish</h4>
+          <p class="text-slate-600 dark:text-slate-300">You are graded out of 5 stars based on ingredient accuracy (50%), oven temperature calibration (25%), and baking time precision (25%).</p>
+        </div>
+      </div>
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        <button onclick="closeChefGuideModal()" class="px-5 py-2 bg-amber-600 text-white font-extrabold text-xs rounded-xl">Back to Kitchen</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PANTRY = [
+      { id: 'chocolate', name: 'Dark Chocolate (100g)', icon: '🍫' },
+      { id: 'butter', name: 'Unsalted Butter (100g)', icon: '🧈' },
+      { id: 'eggs', name: 'Large Eggs (2x)', icon: '🥚' },
+      { id: 'sugar', name: 'Cane Sugar (100g)', icon: '🧂' },
+      { id: 'flour', name: 'Cake Flour (100g)', icon: '🌾' },
+      { id: 'almond', name: 'Almond Flour (100g)', icon: '🌰' },
+      { id: 'apples', name: 'Honeycrisp Apples (2x)', icon: '🍎' },
+      { id: 'cinnamon', name: 'Ceylon Cinnamon (1 tsp)', icon: '🪵' }
+    ];
+
+    const RECIPES = [
+      {
+        id: 'lava',
+        title: 'Molten Chocolate Lava Cake',
+        desc: 'Crisp outer chocolate sponge with a liquid ganache center.',
+        req: { chocolate: 2, butter: 1, eggs: 2, sugar: 1, flour: 1 },
+        idealTemp: 425,
+        idealTime: 13,
+        science: 'High heat (425°F) for a short 13-minute bake sets the outer egg-flour matrix while keeping the high-fat chocolate center molten.'
+      },
+      {
+        id: 'macaron',
+        title: 'French Almond Macarons',
+        desc: 'Delicate meringue shells with smooth feet and chewy interiors.',
+        req: { almond: 2, sugar: 2, eggs: 1 },
+        idealTemp: 300,
+        idealTime: 16,
+        science: 'Low temperature (300°F) gently dries the meringue skin so trapped steam pushes upward to form the signature ruffled "feet" without browning.'
+      },
+      {
+        id: 'applepie',
+        title: 'Dutch Spiced Apple Tart',
+        desc: 'Caramelized orchard apples baked in a flaky butter crust.',
+        req: { apples: 2, butter: 2, flour: 2, sugar: 1, cinnamon: 1 },
+        idealTemp: 375,
+        idealTime: 38,
+        science: 'Pectin in Honeycrisp apples softens slowly at 375°F while butter steam creates flaky gluten layers in the pastry crust.'
+      },
+      {
+        id: 'financier',
+        title: 'Brown Butter Financiers',
+        desc: 'Golden French almond tea cakes with nutty beurre noisette.',
+        req: { almond: 1, butter: 2, eggs: 1, flour: 1, sugar: 1 },
+        idealTemp: 400,
+        idealTime: 15,
+        science: 'Toasting milk solids in butter creates nutty pyrazine compounds that pair with fine almond meal.'
+      }
+    ];
+
+    let activeRecipe = RECIPES[0];
+    let bowl = {};
+    let totalScore = 0;
+    let perfectedIds = new Set();
+
+    function renderRecipeList() {
+      const container = document.getElementById('recipe-list');
+      container.innerHTML = '';
+      RECIPES.forEach(r => {
+        const isSelected = r.id === activeRecipe.id;
+        const done = perfectedIds.has(r.id);
+        const btn = document.createElement('button');
+        btn.onclick = () => selectRecipe(r.id);
+        btn.className = `p-4 rounded-2xl border text-left transition ${
+          isSelected
+            ? 'bg-amber-100/80 dark:bg-slate-800 border-amber-500 ring-2 ring-amber-500/30'
+            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-amber-300'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase text-amber-600">Target: ${r.idealTemp}°F • ${r.idealTime}m</span>
+            ${done ? '<span class="text-xs">✅</span>' : ''}
+          </div>
+          <div class="font-extrabold text-sm mt-1">${r.title}</div>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectRecipe(id) {
+      activeRecipe = RECIPES.find(r => r.id === id) || RECIPES[0];
+      bowl = {};
+      document.getElementById('current-recipe-title').textContent = activeRecipe.title;
+      document.getElementById('current-recipe-desc').textContent = activeRecipe.desc;
+      renderRecipeList();
+      renderRequirements();
+      renderBowl();
+    }
+
+    function renderPantry() {
+      const grid = document.getElementById('pantry-grid');
+      grid.innerHTML = '';
+      PANTRY.forEach(item => {
+        const btn = document.createElement('button');
+        btn.onclick = () => addToBowl(item.id);
+        btn.className = 'p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center transition';
+        btn.innerHTML = `
+          <span class="text-2xl mb-1">${item.icon}</span>
+          <span class="text-[11px] font-extrabold leading-tight">${item.name}</span>
+        `;
+        grid.appendChild(btn);
+      });
+    }
+
+    function addToBowl(id) {
+      bowl[id] = (bowl[id] || 0) + 1;
+      renderBowl();
+      renderRequirements();
+    }
+
+    function clearBowl() {
+      bowl = {};
+      renderBowl();
+      renderRequirements();
+    }
+
+    function renderRequirements() {
+      const reqEl = document.getElementById('recipe-requirements');
+      reqEl.innerHTML = '';
+      Object.entries(activeRecipe.req).forEach(([id, needed]) => {
+        const item = PANTRY.find(p => p.id === id);
+        const have = bowl[id] || 0;
+        const ok = have === needed;
+        const row = document.createElement('div');
+        row.className = `flex justify-between font-bold ${ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`;
+        row.innerHTML = `<span>${item.icon} ${item.name}</span><span>${have} / ${needed}</span>`;
+        reqEl.appendChild(row);
+      });
+    }
+
+    function renderBowl() {
+      const el = document.getElementById('mixing-bowl');
+      const entries = Object.entries(bowl);
+      if (entries.length === 0) {
+        el.innerHTML = '<span class="text-xs text-slate-400">Bowl is empty...</span>';
+        return;
+      }
+      el.innerHTML = entries.map(([id, qty]) => {
+        const item = PANTRY.find(p => p.id === id);
+        return `<span class="px-2.5 py-1 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-xs font-extrabold">${item.icon} ×${qty}</span>`;
+      }).join('');
+    }
+
+    function bakeDish() {
+      const temp = parseInt(document.getElementById('temp-input').value);
+      const time = parseInt(document.getElementById('time-input').value);
+
+      // Score ingredients
+      let ingErrors = 0;
+      const allKeys = new Set([...Object.keys(activeRecipe.req), ...Object.keys(bowl)]);
+      allKeys.forEach(k => {
+        ingErrors += Math.abs((activeRecipe.req[k] || 0) - (bowl[k] || 0));
+      });
+
+      const tempDiff = Math.abs(temp - activeRecipe.idealTemp);
+      const timeDiff = Math.abs(time - activeRecipe.idealTime);
+
+      let stars = 5;
+      if (ingErrors > 0) stars -= Math.min(3, ingErrors);
+      if (tempDiff >= 25) stars -= 1;
+      if (timeDiff >= 3) stars -= 1;
+      stars = Math.max(1, stars);
+
+      const pts = stars * 100;
+      totalScore += pts;
+      if (stars >= 4) perfectedIds.add(activeRecipe.id);
+
+      document.getElementById('chef-score').textContent = `${totalScore} Pts`;
+      document.getElementById('dishes-completed').textContent = `${perfectedIds.size} / ${RECIPES.length}`;
+      renderRecipeList();
+
+      document.getElementById('result-stars').textContent = '⭐'.repeat(stars);
+      document.getElementById('result-title').textContent = stars >= 4 ? `Masterpiece! +${pts} Prestige` : `Needs Calibration (+${pts} Pts)`;
+      document.getElementById('result-feedback').textContent =
+        `You baked at ${temp}°F for ${time} mins (Target: ${activeRecipe.idealTemp}°F for ${activeRecipe.idealTime} mins) with ${ingErrors} measurement variance(s).`;
+      document.getElementById('result-science').innerHTML = `<strong>Food Science Insight:</strong> ${activeRecipe.science}`;
+      document.getElementById('result-modal').classList.remove('hidden');
+    }
+
+    function openChefGuideModal() { document.getElementById('chef-guide-modal').classList.remove('hidden'); }
+    function closeChefGuideModal() { document.getElementById('chef-guide-modal').classList.add('hidden'); }
+    function switchGuideTab(tabNum) {
+      [1, 2, 3].forEach(n => {
+        document.getElementById(`guide-tab-${n}`).classList.toggle('hidden', n !== tabNum);
+        document.getElementById(`guide-tab-btn-${n}`).className = n === tabNum
+          ? 'py-2 rounded-lg bg-white dark:bg-slate-800 text-amber-600 shadow-sm'
+          : 'py-2 rounded-lg text-slate-500';
+      });
+    }
+
+    window.onload = () => {
+      renderPantry();
+      selectRecipe('lava');
+    };
+  </script>
+</body>
+</html>
