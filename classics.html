@@ -278,7 +278,7 @@
 
       const rulesText = document.getElementById('game-rules-text');
       if (game === 'chess') {
-        rulesText.textContent = "Click any of your pieces to highlight valid moves. Pawns promote automatically to Queens on the 8th rank. Capture the enemy King to win!";
+        rulesText.textContent = "Click any of your pieces to highlight legal moves. You cannot make a move that leaves your King in check. Trap the opponent's King in Checkmate to win!";
         updateTurnUI(chessTurn === 'w' ? "White's Turn" : "Black's Turn", chessTurn === 'w' ? 'white' : 'black');
       } else if (game === 'checkers') {
         rulesText.textContent = "Move diagonally forward on dark squares. Jump over opponent pieces to capture them! Reach the far row to crown a King (which moves forward and backward).";
@@ -338,7 +338,7 @@
       renderChess();
     }
 
-    function getChessMoves(board, r, c) {
+    function getRawChessMoves(board, r, c) {
       const piece = board[r][c];
       if (!piece) return [];
       const color = piece[0];
@@ -398,6 +398,59 @@
       return moves;
     }
 
+    function isKingInCheck(board, color) {
+      let kingPos = null;
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (board[r][c] === color + 'K') {
+            kingPos = { r, c };
+            break;
+          }
+        }
+        if (kingPos) break;
+      }
+      if (!kingPos) return true;
+
+      const enemy = color === 'w' ? 'b' : 'w';
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (board[r][c] && board[r][c][0] === enemy) {
+            const enemyMoves = getRawChessMoves(board, r, c);
+            if (enemyMoves.some(m => m.r === kingPos.r && m.c === kingPos.c)) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function getChessMoves(board, r, c) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const color = piece[0];
+      const rawMoves = getRawChessMoves(board, r, c);
+
+      // Filter out any move that leaves own King in check
+      return rawMoves.filter(m => {
+        const simBoard = board.map(row => [...row]);
+        simBoard[m.r][m.c] = simBoard[r][c];
+        simBoard[r][c] = null;
+        return !isKingInCheck(simBoard, color);
+      });
+    }
+
+    function hasAnyLegalChessMoves(board, color) {
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (board[r][c] && board[r][c][0] === color) {
+            if (getChessMoves(board, r, c).length > 0) return true;
+          }
+        }
+      }
+      return false;
+    }
+
     function handleChessClick(r, c) {
       if (chessGameOver) return;
       if (opponentMode === 'ai' && chessTurn === 'b') return;
@@ -432,21 +485,41 @@
       if (piece === 'bP' && tr === 7) chessBoard[tr][tc] = 'bQ';
 
       const cols = 'abcdefgh';
-      const moveNotation = `${piece[0] === 'w' ? 'White' : 'Black'} ${piece[1]} → ${cols[tc]}${8 - tr}${captured ? ' (Captured ' + captured[1] + ')' : ''}`;
+      const nextTurn = chessTurn === 'w' ? 'b' : 'w';
+      const inCheck = isKingInCheck(chessBoard, nextTurn);
+      const hasMoves = hasAnyLegalChessMoves(chessBoard, nextTurn);
+
+      let suffix = '';
+      if (!hasMoves && inCheck) suffix = ' # (CHECKMATE!)';
+      else if (!hasMoves && !inCheck) suffix = ' (STALEMATE)';
+      else if (inCheck) suffix = ' + (Check!)';
+
+      const moveNotation = `${piece[0] === 'w' ? 'White' : 'Black'} ${piece[1]} → ${cols[tc]}${8 - tr}${captured ? ' (Captured ' + captured[1] + ')' : ''}${suffix}`;
       logEvent(moveNotation);
-      playTone(captured ? 520 : 400, 'triangle', 0.12);
 
       chessSelected = null;
       chessValidMoves = [];
 
-      if (captured && captured[1] === 'K') {
+      if (!hasMoves) {
         chessGameOver = true;
-        document.getElementById('status-message').textContent = `${piece[0] === 'w' ? 'White' : 'Black'} Wins by King Capture!`;
+        if (inCheck) {
+          const winner = chessTurn === 'w' ? 'White' : 'Black';
+          document.getElementById('status-message').textContent = `CHECKMATE! ${winner} Wins!`;
+          updateTurnUI(`Checkmate — ${winner} Wins`, chessTurn === 'w' ? 'white' : 'black');
+          playTone(660, 'triangle', 0.25);
+        } else {
+          document.getElementById('status-message').textContent = 'STALEMATE! Match is a Draw.';
+          updateTurnUI('Draw — Stalemate', 'white');
+          playTone(300, 'sine', 0.2);
+        }
         renderChess();
         return;
       }
 
-      chessTurn = chessTurn === 'w' ? 'b' : 'w';
+      playTone(inCheck ? 600 : captured ? 520 : 400, 'triangle', 0.12);
+      document.getElementById('status-message').textContent = inCheck ? `${nextTurn === 'w' ? 'White' : 'Black'} King is in CHECK!` : '';
+
+      chessTurn = nextTurn;
       updateTurnUI(chessTurn === 'w' ? "White's Turn" : "Black's Turn", chessTurn === 'w' ? 'white' : 'black');
       renderChess();
 
@@ -464,7 +537,12 @@
             const moves = getChessMoves(chessBoard, r, c);
             moves.forEach(m => {
               const target = chessBoard[m.r][m.c];
-              const score = target ? values[target[1]] * 10 : Math.random();
+              let score = target ? values[target[1]] * 10 : Math.random();
+              // Bonus if AI move puts White in check
+              const simBoard = chessBoard.map(row => [...row]);
+              simBoard[m.r][m.c] = simBoard[r][c];
+              simBoard[r][c] = null;
+              if (isKingInCheck(simBoard, 'w')) score += 4;
               allMoves.push({ fr: r, fc: c, tr: m.r, tc: m.c, score });
             });
           }
@@ -479,17 +557,20 @@
     function renderChess() {
       const boardEl = document.getElementById('chess-board');
       boardEl.innerHTML = '';
+      const activeInCheck = isKingInCheck(chessBoard, chessTurn);
+
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
           const isDark = (r + c) % 2 === 1;
           const isSelected = chessSelected && chessSelected.r === r && chessSelected.c === c;
           const isValid = chessValidMoves.some(m => m.r === r && m.c === c);
           const piece = chessBoard[r][c];
+          const isCheckedKing = activeInCheck && piece === chessTurn + 'K';
 
           const sq = document.createElement('div');
           sq.onclick = () => handleChessClick(r, c);
           sq.className = `relative flex items-center justify-center cursor-pointer text-3xl sm:text-5xl select-none ${
-            isDark ? 'bg-[#b58863]' : 'bg-[#f0d9b5]'
+            isCheckedKing ? 'bg-rose-600 animate-pulse' : isDark ? 'bg-[#b58863]' : 'bg-[#f0d9b5]'
           } ${isSelected ? 'ring-4 ring-inset ring-indigo-500' : ''}`;
 
           if (piece) {
